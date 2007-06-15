@@ -1,5 +1,6 @@
-mapserver (4.10.2-1) unstable; urgency=low
+mapserver (4.10.2-0.etch.1) unstable; urgency=low
 
+  * Start branching for Etch.
   * New upstream release.
     (closes: #412836)
   * Fixed PHP case in long descriptions.
