@@ -1,3 +1,12 @@
+mapserver (4.10.0-5+etch2) stable-security; urgency=high
+
+  * Fixed XSS vulnerabilities.
+    - Added 80_xss.dpatch. Patch provided by upstream with minor modifications
+      to apply correctly.
+    [http://trac.osgeo.org/mapserver/ticket/2256]
+
+ -- Andreas Putzo <andreas@putzo.net>  Tue, 28 Aug 2007 20:19:05 +0000
+
 mapserver (4.10.0-5+etch1) testing; urgency=low
 
   * debian/po/ja.po: added, thanks to Kobayashi Noritada. (Closes: #413119)

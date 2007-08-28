@@ -1,0 +1,78 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 80_xss.dpatch by  Andreas Putzo <andreas@putzo.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fix XSS vulnerabilities.
+## DP: http://trac.osgeo.org/mapserver/ticket/2256
+
+@DPATCH@
+diff -urNad mapserver-4.10.0~/HISTORY.TXT mapserver-4.10.0/HISTORY.TXT
+--- mapserver-4.10.0~/HISTORY.TXT	2006-10-02 17:30:32.000000000 +0000
++++ mapserver-4.10.0/HISTORY.TXT	2007-08-28 19:53:30.000000000 +0000
+@@ -16,6 +16,8 @@
+ Version 4.10.0 (2006-10-04)
+ ---------------------------
+ 
++- Fixed XSS vulnerabilities (#2256)
++
+ - No source code changes since 4.10.0-rc1
+ 
+ Known issues in 4.10.0:
+diff -urNad mapserver-4.10.0~/mapserv.c mapserver-4.10.0/mapserv.c
+--- mapserver-4.10.0~/mapserv.c	2006-08-29 01:56:53.000000000 +0000
++++ mapserver-4.10.0/mapserv.c	2007-08-28 19:53:30.000000000 +0000
+@@ -183,7 +183,7 @@
+     msIO_printf("<HEAD><TITLE>MapServer Message</TITLE></HEAD>\n");
+     msIO_printf("<!-- %s -->\n", msGetVersion());
+     msIO_printf("<BODY BGCOLOR=\"#FFFFFF\">\n");
+-    msWriteError(stdout);
++    msWriteErrorXML(stdout);
+     msIO_printf("</BODY></HTML>");
+     msFreeMapServObj(msObj);
+     msCleanup();
+@@ -198,7 +198,7 @@
+       msIO_printf("<HEAD><TITLE>MapServer Message</TITLE></HEAD>\n");
+       msIO_printf("<!-- %s -->\n", msGetVersion());
+       msIO_printf("<BODY BGCOLOR=\"#FFFFFF\">\n");
+-      msWriteError(stdout);
++      msWriteErrorXML(stdout);
+       msIO_printf("</BODY></HTML>");
+     }
+   } else {
+@@ -210,7 +210,7 @@
+ 	msIO_printf("<HEAD><TITLE>MapServer Message</TITLE></HEAD>\n");
+ 	msIO_printf("<!-- %s -->\n", msGetVersion());
+ 	msIO_printf("<BODY BGCOLOR=\"#FFFFFF\">\n");
+-	msWriteError(stdout);
++	msWriteErrorXML(stdout);
+ 	msIO_printf("</BODY></HTML>");
+       }
+     } else {
+@@ -219,7 +219,7 @@
+       msIO_printf("<HEAD><TITLE>MapServer Message</TITLE></HEAD>\n");
+       msIO_printf("<!-- %s -->\n", msGetVersion());
+       msIO_printf("<BODY BGCOLOR=\"#FFFFFF\">\n");
+-      msWriteError(stdout);
++      msWriteErrorXML(stdout);
+       msIO_printf("</BODY></HTML>");
+     }
+   }
+diff -urNad mapserver-4.10.0~/maptemplate.c mapserver-4.10.0/maptemplate.c
+--- mapserver-4.10.0~/maptemplate.c	2006-09-29 20:52:05.000000000 +0000
++++ mapserver-4.10.0/maptemplate.c	2007-08-28 19:53:30.000000000 +0000
+@@ -2965,10 +2965,12 @@
+   } /* end query mode specific substitutions */
+ 
+   for(i=0;i<msObj->request->NumParams;i++) {
+-    sprintf(substr, "[%s]", msObj->request->ParamNames[i]);
+-    outstr = gsub(outstr, substr, msObj->request->ParamValues[i]);
+-    sprintf(substr, "[%s_esc]", msObj->request->ParamNames[i]);
++    snprintf(substr, PROCESSLINE_BUFLEN, "[%s]", msObj->request->ParamNames[i]);
++    encodedstr = msEncodeHTMLEntities(msObj->request->ParamValues[i]);
++    outstr = gsub(outstr, substr, encodedstr);
++    free(encodedstr);
+ 
++    snprintf(substr, PROCESSLINE_BUFLEN, "[%s_esc]", msObj->request->ParamNames[i]);
+     encodedstr = msEncodeUrl(msObj->request->ParamValues[i]);
+     outstr = gsub(outstr, substr, encodedstr);
+     free(encodedstr);
