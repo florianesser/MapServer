@@ -1,3 +1,13 @@
+mapserver (5.0.3-3+lenny1) stable-security; urgency=high
+
+  * Fix stack-based buffer overflow (CVE-2009-0839).
+  * Fix heap-based buffer underflow (CVE-2009-0840).
+  * Fix relative file path writing (CVE-2009-0841).
+  * Fix file data leakage (CVE-2009-0842).
+  * Fix file existence leakage (CVE-2009-0843).
+
+ -- Alan Boudreault <aboudreault@mapgears.com>  Thu, 04 Jun 2009 13:49:50 -0400
+
 mapserver (5.0.3-3) unstable; urgency=low
 
   * Updated sv.po template.
