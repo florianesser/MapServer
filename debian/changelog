@@ -1,11 +1,25 @@
-mapserver (4.10.0-5+etch2) stable-security; urgency=high
+mapserver (4.10.0-5.1+etch3) stable-security; urgency=high
 
-  * Fixed XSS vulnerabilities.
-    - Added 80_xss.dpatch. Patch provided by upstream with minor modifications
-      to apply correctly.
-    [http://trac.osgeo.org/mapserver/ticket/2256]
+  * Fix stack-based buffer overflow (CVE-2009-0839).
+  * Fix heap-based buffer underflow (CVE-2009-0840, CVE-2009-2281).
+  * Fix relative file path writing (CVE-2009-0841).
+  * Fix file data leakage (CVE-2009-0842).
+  * Fix file existence leakage (CVE-2009-0843).
 
- -- Andreas Putzo <andreas@putzo.net>  Tue, 28 Aug 2007 20:19:05 +0000
+ -- Alan Boudreault <aboudreault@mapgears.com>  Tue, 14 Jul 2009 10:00:12 -0400
+
+mapserver (4.10.0-5.1+etch2) stable-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * Apply upstream patches fixing two vulnerabilities:
+    - CVE-2007-4542: Cross-site scripting (XSS) vulnerabilities using
+      mapserver's writeError function (upstream fix also addresses
+      a potential buffer overflow)
+    - CVE-2007-4629: Multiple stack buffer overflow vulnerabilities
+      in template handlers, potentially allowing the execution of
+      arbitrary code via a maliciously crafted map file
+
+ -- Devin Carraway <devin@debian.org>  Tue,  1 Apr 2008 08:00:05 +0000
 
 mapserver (4.10.0-5+etch1) testing; urgency=low
 
