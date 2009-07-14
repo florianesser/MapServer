@@ -7,7 +7,7 @@
 
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
- 
+
 package=mapserver
 
 version=$(shell expr `pwd` : '.*-\([0-9.]*\)')

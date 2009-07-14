@@ -1,3 +1,15 @@
+mapserver (5.0.3-3+lenny3) stable-security; urgency=high
+
+  * Fix Heap-based buffer underflow in the readPostBody (CVE-2009-0840, CVE-2009-2281)
+	
+ -- Alan Boudreault <aboudreault@mapgears.com>  Tue, 14 Jul 2009 08:43:41 -0400
+
+mapserver (5.0.3-3+lenny2) stable-security; urgency=high
+
+  * Fix missing gcc optimization change in debian/rules.
+
+ -- Alan Boudreault <aboudreault@mapgears.com>  Wed, 17 Jun 2009 09:22:40 -0400
+
 mapserver (5.0.3-3+lenny1) stable-security; urgency=high
 
   * Fix stack-based buffer overflow (CVE-2009-0839).
