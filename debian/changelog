@@ -1,4 +1,4 @@
-mapserver (4.10.0-5.1+etch3) stable-security; urgency=high
+mapserver (4.10.0-5.1+etch3) oldstable-security; urgency=high
 
   * Fix stack-based buffer overflow (CVE-2009-0839).
   * Fix heap-based buffer underflow (CVE-2009-0840, CVE-2009-2281).
