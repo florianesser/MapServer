@@ -1,3 +1,10 @@
+mapserver (4.10.0-5.1+etch4) oldstable-security; urgency=high
+
+  * Fix paths specified in url vulnerabilities.
+    [http://trac.osgeo.org/mapserver/ticket/1836]
+
+ -- Alan Boudreault <aboudreault@mapgears.com>  Fri, 24 Jul 2009 14:06:34 -0400
+
 mapserver (4.10.0-5.1+etch3) oldstable-security; urgency=high
 
   * Fix stack-based buffer overflow (CVE-2009-0839).
