@@ -1,3 +1,10 @@
+mapserver (5.0.3-3+lenny4) stable-security; urgency=high
+
+  * Fix paths specified in url vulnerabilities.
+    [http://trac.osgeo.org/mapserver/ticket/1836]
+
+ -- Alan Boudreault <aboudreault@mapgears.com>  Fri, 24 Jul 2009 13:06:18 -0400
+
 mapserver (5.0.3-3+lenny3) stable-security; urgency=high
 
   * Fix Heap-based buffer underflow in the readPostBody (CVE-2009-0840, CVE-2009-2281)
