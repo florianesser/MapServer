@@ -1,0 +1,1040 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 01_wfs_sql_injection.dpatch by Alan Boudreault <aboudreault@mapgears.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+diff -urNad mapserver-5.6.5~/maplayer.c mapserver-5.6.5/maplayer.c
+--- mapserver-5.6.5~/maplayer.c	2010-04-20 00:19:06.000000000 -0400
++++ mapserver-5.6.5/maplayer.c	2011-07-12 00:29:58.000000000 -0400
+@@ -1046,6 +1046,85 @@
+   return MS_FAILURE;
+ }
+ 
++/************************************************************************/
++/*                          LayerDefaultEscapeSQLParam                  */
++/*                                                                      */
++/*      Default function used to escape strings and avoid sql           */
++/*      injection. Specific drivers should redefine if an escaping      */
++/*      function is available in the driver.                            */
++/************************************************************************/
++char *LayerDefaultEscapeSQLParam(layerObj *layer, const char* pszString)
++{
++     char *pszEscapedStr=NULL;
++     if (pszString)
++     {
++         int nSrcLen;
++         char c;
++         int i=0, j=0;
++         nSrcLen = (int)strlen(pszString);
++         pszEscapedStr = (char*) malloc( 2 * nSrcLen + 1);
++         for(i = 0, j = 0; i < nSrcLen; i++)
++         {
++             c = pszString[i];
++             if (c == '\'')
++             {
++                 pszEscapedStr[j++] = '\'';
++                 pszEscapedStr[j++] = '\'';
++             }
++             else if (c == '\\')
++             {
++                 pszEscapedStr[j++] = '\\';
++                 pszEscapedStr[j++] = '\\';
++             }
++             else
++               pszEscapedStr[j++] = c;
++         }
++         pszEscapedStr[j] = 0;
++     }  
++     return pszEscapedStr;
++}
++
++/************************************************************************/
++/*                          LayerDefaultEscapePropertyName              */
++/*                                                                      */
++/*      Return the property name in a properly escaped and quoted form. */
++/************************************************************************/
++char *LayerDefaultEscapePropertyName(layerObj *layer, const char* pszString)
++{
++     char* pszEscapedStr=NULL;
++     int i, j = 0;   
++
++     if (layer && pszString && strlen(pszString) > 0)
++     {
++         int nLength = strlen(pszString);
++
++         pszEscapedStr = (char*) malloc( 1 + 2 * nLength + 1 + 1);
++         pszEscapedStr[j++] = '"';
++
++         for (i=0; i<nLength; i++)
++         {
++             char c = pszString[i];
++             if (c == '"')
++             {
++                 pszEscapedStr[j++] = '"';
++                 pszEscapedStr[j++] ='"';
++             }
++             else if (c == '\\')
++             {
++                 pszEscapedStr[j++] = '\\';
++                 pszEscapedStr[j++] = '\\';
++             }
++             else
++               pszEscapedStr[j++] = c;
++         }
++         pszEscapedStr[j++] = '"';
++         pszEscapedStr[j++] = 0;
++        
++     }
++     return pszEscapedStr;
++}
++
++
+ /*
+  * msConnectLayer
+  *
+@@ -1103,6 +1182,10 @@
+     
+   vtable->LayerGetNumFeatures = LayerDefaultGetNumFeatures;
+ 
++  vtable->LayerEscapeSQLParam = LayerDefaultEscapeSQLParam;
++
++  vtable->LayerEscapePropertyName = LayerDefaultEscapePropertyName;
++
+   return MS_SUCCESS;
+ }
+ 
+@@ -1275,6 +1358,32 @@
+     return i;
+ }
+ 
++
++
++/*
++Returns an escaped string
++*/
++char  *msLayerEscapeSQLParam(layerObj *layer, const char*pszString) 
++{
++    if ( ! layer->vtable) {
++        int rv =  msInitializeVirtualTable(layer);
++        if (rv != MS_SUCCESS)
++            return "";
++    }
++    return layer->vtable->LayerEscapeSQLParam(layer, pszString);
++}
++
++char  *msLayerEscapePropertyName(layerObj *layer, const char*pszString) 
++{
++    if ( ! layer->vtable) {
++        int rv =  msInitializeVirtualTable(layer);
++        if (rv != MS_SUCCESS)
++            return "";
++    }
++    return layer->vtable->LayerEscapePropertyName(layer, pszString);
++}
++
++
+ int
+ msINLINELayerInitializeVirtualTable(layerObj *layer)
+ {
+@@ -1307,5 +1416,7 @@
+     /* layer->vtable->LayerCreateItems, use default */
+     layer->vtable->LayerGetNumFeatures = msINLINELayerGetNumFeatures;
+ 
++    /*layer->vtable->LayerEscapeSQLParam, use default*/
++    /*layer->vtable->LayerEscapePropertyName, use default*/
+     return MS_SUCCESS;
+ }
+diff -urNad mapserver-5.6.5~/mapogcfilter.c mapserver-5.6.5/mapogcfilter.c
+--- mapserver-5.6.5~/mapogcfilter.c	2010-04-13 10:08:11.000000000 -0400
++++ mapserver-5.6.5/mapogcfilter.c	2011-07-12 00:29:58.000000000 -0400
+@@ -168,7 +168,7 @@
+         if (tokens && nTokens == 2)
+         {
+             char szTmp[32];
+-            sprintf(szTmp, "init=epsg:%s",tokens[1]);
++            snprintf(szTmp, sizeof(szTmp), "init=epsg:%s",tokens[1]);
+             msInitProjection(psProj);
+             if (msLoadProjectionString(psProj, szTmp) == 0)
+               nStatus = MS_TRUE;
+@@ -193,7 +193,7 @@
+             if (nEpsgTmp > 0)
+             {
+                 char szTmp[32];
+-                sprintf(szTmp, "init=epsg:%d",nEpsgTmp);
++                snprintf(szTmp, sizeof(szTmp), "init=epsg:%d",nEpsgTmp);
+                 msInitProjection(psProj);
+                 if (msLoadProjectionString(psProj, szTmp) == 0)
+                   nStatus = MS_TRUE;
+@@ -989,7 +989,7 @@
+         if (tokens && nTokens == 2)
+         {
+             char szTmp[32];
+-            sprintf(szTmp, "init=epsg:%s",tokens[1]);
++            snprintf(szTmp, sizeof(szTmp), "init=epsg:%s",tokens[1]);
+             msInitProjection(&sProjTmp);
+             if (msLoadProjectionString(&sProjTmp, szTmp) == 0)
+               msProjectRect(&sProjTmp, &map->projection,  &sQueryRect);
+@@ -1014,7 +1014,7 @@
+             if (nEpsgTmp > 0)
+             {
+                 char szTmp[32];
+-                sprintf(szTmp, "init=epsg:%d",nEpsgTmp);
++                snprintf(szTmp, sizeof(szTmp), "init=epsg:%d",nEpsgTmp);
+                 msInitProjection(&sProjTmp);
+                 if (msLoadProjectionString(&sProjTmp, szTmp) == 0)
+                   msProjectRect(&sProjTmp, &map->projection,  &sQueryRect);
+@@ -2780,9 +2780,9 @@
+                               bString = 1;
+                         }
+                         if (bString)
+-                          sprintf(szTmp, "('[%s]' = '%s')" , pszAttribute, tokens[i]);
++                          snprintf(szTmp, sizeof(szTmp), "('[%s]' = '%s')" , pszAttribute, tokens[i]);
+                         else
+-                           sprintf(szTmp, "([%s] = %s)" , pszAttribute, tokens[i]);
++                          snprintf(szTmp, sizeof(szTmp), "([%s] = %s)" , pszAttribute, tokens[i]);
+ 
+                         if (pszExpression != NULL)
+                           pszExpression = msStringConcatenate(pszExpression, " OR ");
+@@ -2847,8 +2847,7 @@
+                                 "PropertyIsLike") == 0)
+             {
+                  pszExpression = 
+-                   FLTGetIsLikeComparisonSQLExpression(psFilterNode,
+-                                                       connectiontype);
++                   FLTGetIsLikeComparisonSQLExpression(psFilterNode, lp);
+             }
+         }
+     }
+@@ -2885,6 +2884,7 @@
+                 bString = 0;
+                 if (tokens && nTokens > 0)
+                 {
++                    char *pszEscapedStr = NULL;
+                     for (i=0; i<nTokens; i++)
+                     {
+                         if (i == 0)
+@@ -2893,10 +2893,14 @@
+                             if (FLTIsNumeric(pszTmp) == MS_FALSE)    
+                                bString = 1;
+                         }
++                        pszEscapedStr = msLayerEscapeSQLParam(lp, tokens[i]);
+                         if (bString)
+-                          sprintf(szTmp, "(%s = '%s')" , pszAttribute, tokens[i]);
++                          snprintf(szTmp, sizeof(szTmp), "(%s = '%s')" , pszAttribute, pszEscapedStr);
+                         else
+-                           sprintf(szTmp, "(%s = %s)" , pszAttribute, tokens[i]);
++                          snprintf(szTmp, sizeof(szTmp), "(%s = %s)" , pszAttribute, pszEscapedStr);
++
++                        msFree(pszEscapedStr);
++                        pszEscapedStr=NULL;
+ 
+                         if (pszExpression != NULL)
+                           pszExpression = msStringConcatenate(pszExpression, " OR ");
+@@ -3181,6 +3185,7 @@
+ /************************************************************************/
+ char *FLTGetBinaryComparisonExpresssion(FilterEncodingNode *psFilterNode, layerObj *lp)
+ {
++    const size_t bufferSize = 1024;
+     char szBuffer[1024];
+     int bString=0;
+     char szTmp[256];
+@@ -3210,16 +3215,16 @@
+       
+ 
+     if (bString)
+-      strcat(szBuffer, " (\"[");
++      strlcat(szBuffer, " (\"[", bufferSize);
+     else
+-      strcat(szBuffer, " ([");
++      strlcat(szBuffer, " ([", bufferSize);
+     /* attribute */
+ 
+-    strcat(szBuffer, psFilterNode->psLeftNode->pszValue);
++    strlcat(szBuffer, psFilterNode->psLeftNode->pszValue, bufferSize);
+     if (bString)
+-      strcat(szBuffer, "]\" ");
++      strlcat(szBuffer, "]\" ", bufferSize);
+     else
+-      strcat(szBuffer, "] "); 
++     strlcat(szBuffer, "] ", bufferSize);  
+     
+ 
+     /* logical operator */
+@@ -3230,40 +3235,40 @@
+         if (psFilterNode->psRightNode->pOther && 
+             (*(int *)psFilterNode->psRightNode->pOther) == 1)
+         {
+-            strcat(szBuffer, "IEQ");
++            strlcat(szBuffer, "IEQ", bufferSize);
+         }
+         else
+-          strcat(szBuffer, "=");
++          strlcat(szBuffer, "=",bufferSize);
+     }
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsNotEqualTo") == 0)
+-      strcat(szBuffer, "!="); 
++      strlcat(szBuffer, "!=", bufferSize); 
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsLessThan") == 0)
+-      strcat(szBuffer, "<");
++      strlcat(szBuffer, "<", bufferSize);
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsGreaterThan") == 0)
+-      strcat(szBuffer, ">");
++      strlcat(szBuffer, ">", bufferSize);
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsLessThanOrEqualTo") == 0)
+-      strcat(szBuffer, "<=");
++      strlcat(szBuffer, "<=", bufferSize);
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsGreaterThanOrEqualTo") == 0)
+-      strcat(szBuffer, ">=");
++      strlcat(szBuffer, ">=", bufferSize);
+     
+-    strcat(szBuffer, " ");
++    strlcat(szBuffer, " ", bufferSize);
+     
+     /* value */
+     if (bString)
+-      strcat(szBuffer, "\"");
++      strlcat(szBuffer, "\"", bufferSize);
+     
+     if (psFilterNode->psRightNode->pszValue)
+-      strcat(szBuffer, psFilterNode->psRightNode->pszValue);
++      strlcat(szBuffer, psFilterNode->psRightNode->pszValue,bufferSize);
+ 
+     if (bString)
+-      strcat(szBuffer, "\"");
++      strlcat(szBuffer, "\"",bufferSize);
+     
+-    strcat(szBuffer, ") ");
++    strlcat(szBuffer, ") ",bufferSize);
+ 
+     return strdup(szBuffer);
+ }
+@@ -3278,9 +3283,11 @@
+ char *FLTGetBinaryComparisonSQLExpresssion(FilterEncodingNode *psFilterNode,
+                                            layerObj *lp)
+ {
++    const size_t bufferSize = 1024;
+     char szBuffer[1024];
+     int bString=0;
+     char szTmp[256];
++    char* pszEscapedStr = NULL;
+ 
+     szBuffer[0] = '\0';
+     if (!psFilterNode || !
+@@ -3309,7 +3316,9 @@
+       
+ 
+     /*opening bracket*/
+-    strcat(szBuffer, " (");
++    strlcat(szBuffer, " (", bufferSize);
++
++    pszEscapedStr = msLayerEscapePropertyName(lp, psFilterNode->psLeftNode->pszValue);
+ 
+     /* attribute */
+     /*case insensitive set ? */
+@@ -3319,35 +3328,37 @@
+         psFilterNode->psRightNode->pOther && 
+         (*(int *)psFilterNode->psRightNode->pOther) == 1)
+     {
+-        sprintf(szTmp, "lower(%s) ",  psFilterNode->psLeftNode->pszValue);
+-        strcat(szBuffer, szTmp);
++        snprintf(szTmp, sizeof(szTmp), "lower(%s) ",  pszEscapedStr);
++        strlcat(szBuffer, szTmp, bufferSize);
+     }
+     else
+-      strcat(szBuffer, psFilterNode->psLeftNode->pszValue);
++      strlcat(szBuffer, pszEscapedStr, bufferSize);
+ 
++    msFree(pszEscapedStr);
++    pszEscapedStr = NULL;
+     
+ 
+     /* logical operator */
+-    if (strcasecmp(psFilterNode->pszValue, 
++   if (strcasecmp(psFilterNode->pszValue, 
+                    "PropertyIsEqualTo") == 0)
+-      strcat(szBuffer, "=");
++      strlcat(szBuffer, "=", bufferSize);
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsNotEqualTo") == 0)
+-      strcat(szBuffer, "<>"); 
++      strlcat(szBuffer, "<>", bufferSize); 
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsLessThan") == 0)
+-      strcat(szBuffer, "<");
++      strlcat(szBuffer, "<", bufferSize);
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsGreaterThan") == 0)
+-      strcat(szBuffer, ">");
++      strlcat(szBuffer, ">", bufferSize);
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsLessThanOrEqualTo") == 0)
+-      strcat(szBuffer, "<=");
++      strlcat(szBuffer, "<=", bufferSize);
+     else if (strcasecmp(psFilterNode->pszValue, 
+                         "PropertyIsGreaterThanOrEqualTo") == 0)
+-      strcat(szBuffer, ">=");
++      strlcat(szBuffer, ">=", bufferSize);
+     
+-    strcat(szBuffer, " ");
++    strlcat(szBuffer, " ", bufferSize);
+     
+     /* value */
+ 
+@@ -3358,23 +3369,33 @@
+         psFilterNode->psRightNode->pOther && 
+         (*(int *)psFilterNode->psRightNode->pOther) == 1)
+     {
+-        sprintf(szTmp, "lower('%s') ",  psFilterNode->psRightNode->pszValue);
+-        strcat(szBuffer, szTmp);
++        snprintf(szTmp, sizeof(szTmp), "lower('%s') ",  psFilterNode->psRightNode->pszValue);
++        strlcat(szBuffer, szTmp, bufferSize);
+     }
+     else
+     {
+         if (bString)
+-          strcat(szBuffer, "'");
++          strlcat(szBuffer, "'", bufferSize);
+     
+         if (psFilterNode->psRightNode->pszValue)
+-          strcat(szBuffer, psFilterNode->psRightNode->pszValue);
++        {
++            if (bString)
++            {
++                char* pszEscapedStr;
++                pszEscapedStr = msLayerEscapeSQLParam(lp, psFilterNode->psRightNode->pszValue);
++                strlcat(szBuffer, pszEscapedStr, bufferSize);
++                msFree(pszEscapedStr);
++                pszEscapedStr=NULL;
++            }
++            else
++              strlcat(szBuffer, psFilterNode->psRightNode->pszValue, bufferSize);
++        }
+ 
+         if (bString)
+-          strcat(szBuffer, "'");
+-
++          strlcat(szBuffer, "'", bufferSize);
+     }
+     /*closing bracket*/
+-    strcat(szBuffer, ") ");
++    strlcat(szBuffer, ") ", bufferSize);
+ 
+     return strdup(szBuffer);
+ }
+@@ -3388,12 +3409,13 @@
+ char *FLTGetIsBetweenComparisonSQLExpresssion(FilterEncodingNode *psFilterNode,
+                                               layerObj *lp)
+ {
++    const size_t bufferSize = 1024;
+     char szBuffer[1024];
+     char **aszBounds = NULL;
+     int nBounds = 0;
+     int bString=0;
+     char szTmp[256];
+-
++    char* pszEscapedStr;
+ 
+     szBuffer[0] = '\0';
+     if (!psFilterNode ||
+@@ -3437,32 +3459,46 @@
+ /*      build expresssion.                                              */
+ /* -------------------------------------------------------------------- */
+     /*opening paranthesis */
+-    strcat(szBuffer, " (");
++    strlcat(szBuffer, " (",bufferSize);
+ 
+     /* attribute */
+-    strcat(szBuffer, psFilterNode->psLeftNode->pszValue);
++    pszEscapedStr = msLayerEscapePropertyName(lp, psFilterNode->psLeftNode->pszValue);
++
++    strlcat(szBuffer, pszEscapedStr, bufferSize);
++    msFree(pszEscapedStr);
++    pszEscapedStr = NULL;
+ 
+     /*between*/
+-    strcat(szBuffer, " BETWEEN ");
++    strlcat(szBuffer, " BETWEEN ",bufferSize);
+ 
+     /*bound 1*/
+     if (bString)
+-      strcat(szBuffer,"'");
+-    strcat(szBuffer, aszBounds[0]);
++      strlcat(szBuffer,"'",bufferSize);
++
++    pszEscapedStr = msLayerEscapeSQLParam( lp, aszBounds[0]);
++    strlcat(szBuffer, pszEscapedStr, bufferSize);
++    msFree(pszEscapedStr);
++    pszEscapedStr=NULL;
++
+     if (bString)
+-      strcat(szBuffer,"'");
++      strlcat(szBuffer,"'",bufferSize);
+ 
+-    strcat(szBuffer, " AND ");
++    strlcat(szBuffer, " AND ",bufferSize);
+ 
+     /*bound 2*/
+     if (bString)
+-      strcat(szBuffer, "'");
+-    strcat(szBuffer, aszBounds[1]);
++      strlcat(szBuffer, "'",bufferSize);
++
++    pszEscapedStr = msLayerEscapeSQLParam( lp, aszBounds[1]);
++    strlcat(szBuffer, pszEscapedStr, bufferSize);
++    msFree(pszEscapedStr);
++    pszEscapedStr=NULL;
++
+     if (bString)
+-      strcat(szBuffer,"'");
++      strlcat(szBuffer,"'",bufferSize);
+ 
+     /*closing paranthesis*/
+-    strcat(szBuffer, ")");
++    strlcat(szBuffer, ")",bufferSize);
+      
+     
+     return strdup(szBuffer);
+@@ -3476,6 +3512,7 @@
+ char *FLTGetIsBetweenComparisonExpresssion(FilterEncodingNode *psFilterNode,
+                                            layerObj *lp)
+ {
++    const size_t bufferSize = 1024;
+     char szBuffer[1024];
+     char **aszBounds = NULL;
+     int nBounds = 0;
+@@ -3496,7 +3533,10 @@
+ /* -------------------------------------------------------------------- */
+     aszBounds = msStringSplit(psFilterNode->psRightNode->pszValue, ';', &nBounds);
+     if (nBounds != 2)
++    {
++      msFreeCharArray(aszBounds, nBounds);
+       return NULL;
++    }
+ /* -------------------------------------------------------------------- */
+ /*      check if the value is a numeric value or alphanumeric. If it    */
+ /*      is alphanumeric, add quotes around attribute and values.        */
+@@ -3525,50 +3565,51 @@
+ /*      build expresssion.                                              */
+ /* -------------------------------------------------------------------- */
+     if (bString)
+-      strcat(szBuffer, " (\"[");
++      strlcat(szBuffer, " (\"[", bufferSize);
+     else
+-      strcat(szBuffer, " ([");
++      strlcat(szBuffer, " ([", bufferSize);
+ 
+     /* attribute */
+-    strcat(szBuffer, psFilterNode->psLeftNode->pszValue);
++    strlcat(szBuffer, psFilterNode->psLeftNode->pszValue, bufferSize);
+ 
+     if (bString)
+-      strcat(szBuffer, "]\" ");
++      strlcat(szBuffer, "]\" ", bufferSize);
+     else
+-      strcat(szBuffer, "] ");
++      strlcat(szBuffer, "] ", bufferSize);
+         
+     
+-    strcat(szBuffer, " >= ");
++    strlcat(szBuffer, " >= ", bufferSize);
+     if (bString)
+-      strcat(szBuffer,"\"");
+-    strcat(szBuffer, aszBounds[0]);
++      strlcat(szBuffer,"\"", bufferSize);
++    strlcat(szBuffer, aszBounds[0], bufferSize);
+     if (bString)
+-      strcat(szBuffer,"\"");
++      strlcat(szBuffer,"\"", bufferSize);
+ 
+-    strcat(szBuffer, " AND ");
++    strlcat(szBuffer, " AND ", bufferSize);
+ 
+     if (bString)
+-      strcat(szBuffer, " \"[");
++      strlcat(szBuffer, " \"[", bufferSize);
+     else
+-      strcat(szBuffer, " ["); 
++      strlcat(szBuffer, " [", bufferSize); 
+ 
+     /* attribute */
+-    strcat(szBuffer, psFilterNode->psLeftNode->pszValue);
++    strlcat(szBuffer, psFilterNode->psLeftNode->pszValue, bufferSize);
+     
+     if (bString)
+-      strcat(szBuffer, "]\" ");
++      strlcat(szBuffer, "]\" ", bufferSize);
+     else
+-      strcat(szBuffer, "] ");
++      strlcat(szBuffer, "] ", bufferSize);
+     
+-    strcat(szBuffer, " <= ");
++    strlcat(szBuffer, " <= ", bufferSize);
+     if (bString)
+-      strcat(szBuffer,"\"");
+-    strcat(szBuffer, aszBounds[1]);
++      strlcat(szBuffer,"\"", bufferSize);
++    strlcat(szBuffer, aszBounds[1], bufferSize);
+     if (bString)
+-      strcat(szBuffer,"\"");
+-    strcat(szBuffer, ")");
+-     
+-    
++      strlcat(szBuffer,"\"", bufferSize);
++    strlcat(szBuffer, ")", bufferSize);
++
++    msFreeCharArray(aszBounds, nBounds);
++
+     return strdup(szBuffer);
+ }
+     
+@@ -3579,6 +3620,7 @@
+ /************************************************************************/
+ char *FLTGetIsLikeComparisonExpression(FilterEncodingNode *psFilterNode)
+ {
++    const size_t bufferSize = 1024;
+     char szBuffer[1024];
+     char *pszValue = NULL;
+     
+@@ -3626,43 +3668,49 @@
+     }
+     for (i=0; i<nLength; i++)
+     {
+-        if (pszValue[i] != pszWild[0] && 
+-            pszValue[i] != pszSingle[0] &&
+-            pszValue[i] != pszEscape[0])
+-        {
+-            szBuffer[iBuffer] = pszValue[i];
+-            iBuffer++;
+-            szBuffer[iBuffer] = '\0';
+-        }
+-        else if  (pszValue[i] == pszSingle[0])
+-        {
+-             szBuffer[iBuffer] = '.';
+-             iBuffer++;
+-             szBuffer[iBuffer] = '\0';
+-        }
+-        else if  (pszValue[i] == pszEscape[0])
++        if (iBuffer < 1024)
+         {
+-            szBuffer[iBuffer] = '\\';
+-            iBuffer++;
+-            szBuffer[iBuffer] = '\0';
++            if (pszValue[i] != pszWild[0] && 
++                pszValue[i] != pszSingle[0] &&
++                pszValue[i] != pszEscape[0])
++            {
++                szBuffer[iBuffer] = pszValue[i];
++                iBuffer++;
++                szBuffer[iBuffer] = '\0';
++            }
++            else if  (pszValue[i] == pszSingle[0])
++            {
++                szBuffer[iBuffer] = '.';
++                iBuffer++;
++                szBuffer[iBuffer] = '\0';
++            }
++            else if  (pszValue[i] == pszEscape[0])
++            {
++                szBuffer[iBuffer] = '\\';
++                iBuffer++;
++                szBuffer[iBuffer] = '\0';
+ 
+-        }
+-        else if (pszValue[i] == pszWild[0])
+-        {
+-            /* strcat(szBuffer, "[0-9,a-z,A-Z,\\s]*"); */
+-            /* iBuffer+=17; */
+-            strcat(szBuffer, ".*");
+-            iBuffer+=2;
+-            szBuffer[iBuffer] = '\0';
++            }
++            else if (pszValue[i] == pszWild[0])
++            {
++                /* strcat(szBuffer, "[0-9,a-z,A-Z,\\s]*"); */
++                /* iBuffer+=17; */
++                strlcat(szBuffer, ".*",bufferSize);
++                iBuffer+=2;
++                szBuffer[iBuffer] = '\0';
++            }
+         }
+     }   
+-    szBuffer[iBuffer] = '/';
+-    if (bCaseInsensitive == 1)
++
++    if (iBuffer < 1024)
+     {
+-      szBuffer[++iBuffer] = 'i';
+-    } 
+-    szBuffer[++iBuffer] = '\0';
+-    
++        szBuffer[iBuffer] = '/';
++        if (bCaseInsensitive == 1)
++        {
++            szBuffer[++iBuffer] = 'i';
++        } 
++        szBuffer[++iBuffer] = '\0';
++    }
+         
+     return strdup(szBuffer);
+ }
+@@ -3673,8 +3721,9 @@
+ /*      Build an sql expression for IsLike filter.                      */
+ /************************************************************************/
+ char *FLTGetIsLikeComparisonSQLExpression(FilterEncodingNode *psFilterNode,
+-                                          int connectiontype)
++                                           layerObj *lp)
+ {
++    const size_t bufferSize = 1024;
+     char szBuffer[1024];
+     char *pszValue = NULL;
+     
+@@ -3683,9 +3732,11 @@
+     char *pszEscape = NULL;
+     char szTmp[4];
+ 
+-    int nLength=0, i=0, iBuffer = 0;
++    int nLength=0, i=0, j=0;
+     int  bCaseInsensitive = 0;
+ 
++    char *pszEscapedStr = NULL;
++
+     if (!psFilterNode || !psFilterNode->pOther || !psFilterNode->psLeftNode ||
+         !psFilterNode->psRightNode || !psFilterNode->psRightNode->pszValue)
+       return NULL;
+@@ -3704,60 +3755,80 @@
+ 
+     szBuffer[0] = '\0';
+     /*opening bracket*/
+-    strcat(szBuffer, " (");
++    strlcat(szBuffer, " (", bufferSize);
+ 
+     /* attribute name */
+-    strcat(szBuffer, psFilterNode->psLeftNode->pszValue);
+-    if (bCaseInsensitive == 1 && connectiontype == MS_POSTGIS)
+-      strcat(szBuffer, " ilike '");
++    pszEscapedStr = msLayerEscapePropertyName(lp, psFilterNode->psLeftNode->pszValue);
++
++    strlcat(szBuffer, pszEscapedStr, bufferSize);
++    msFree(pszEscapedStr);
++    pszEscapedStr = NULL;
++
++
++    if (bCaseInsensitive == 1 && lp->connectiontype == MS_POSTGIS)
++      strlcat(szBuffer, " ilike '",bufferSize);
+     else
+-      strcat(szBuffer, " like '");
++      strlcat(szBuffer, " like '",bufferSize);
+         
+    
+     pszValue = psFilterNode->psRightNode->pszValue;
+     nLength = strlen(pszValue);
+-    iBuffer = strlen(szBuffer);
++
++    pszEscapedStr = (char*) malloc( 3 * nLength + 1);
++
+     for (i=0; i<nLength; i++)
+     {
+-        if (pszValue[i] != pszWild[0] && 
+-            pszValue[i] != pszSingle[0] &&
+-            pszValue[i] != pszEscape[0])
++        char c = pszValue[i];
++        if (c != pszWild[0] &&
++            c != pszSingle[0] &&
++            c != pszEscape[0])
+         {
+-            szBuffer[iBuffer] = pszValue[i];
+-            iBuffer++;
+-            szBuffer[iBuffer] = '\0';
++            if (c == '\'')
++            {
++                pszEscapedStr[j++] = '\'';
++                pszEscapedStr[j++] = '\'';
++            }
++            else if (c == '\\')
++            {
++                pszEscapedStr[j++] = '\\';
++                pszEscapedStr[j++] = '\\';
++            }
++            else
++                pszEscapedStr[j++] = c;
+         }
+-        else if  (pszValue[i] == pszSingle[0])
++        else if  (c == pszSingle[0])
+         {
+-             szBuffer[iBuffer] = '_';
+-             iBuffer++;
+-             szBuffer[iBuffer] = '\0';
++            pszEscapedStr[j++] = '_';
+         }
+-        else if  (pszValue[i] == pszEscape[0])
++        else if  (c == pszEscape[0])
+         {
+-            szBuffer[iBuffer] = pszEscape[0];
+-            iBuffer++;
+-            szBuffer[iBuffer] = '\0';
+-            /*if (i<nLength-1)
++            pszEscapedStr[j++] = pszEscape[0];
++            if (i+1<nLength)
+             {
+-                szBuffer[iBuffer] = pszValue[i+1];
+-                iBuffer++;
+-                szBuffer[iBuffer] = '\0';
++                char nextC = pszValue[i+1];
++                i++;
++                if (nextC == '\'')
++                {
++                    pszEscapedStr[j++] = '\'';
++                    pszEscapedStr[j++] = '\'';
++                }
++                else
++                    pszEscapedStr[j++] = nextC;
+             }
+-            */
+         }
+-        else if (pszValue[i] == pszWild[0])
++        else if (c == pszWild[0])
+         {
+-            strcat(szBuffer, "%");
+-            iBuffer++;
+-            szBuffer[iBuffer] = '\0';
++            pszEscapedStr[j++] = '%';
+         }
+     } 
++    pszEscapedStr[j++] = 0;
++    strlcat(szBuffer, pszEscapedStr, bufferSize);
++    msFree(pszEscapedStr);
+ 
+-    strcat(szBuffer, "'");
+-    if (connectiontype != MS_OGR)
++    strlcat(szBuffer, "'",bufferSize);
++    if (lp->connectiontype != MS_OGR)
+     {
+-      strcat(szBuffer, " escape '");
++        strlcat(szBuffer, " escape '",bufferSize);
+       szTmp[0] = pszEscape[0];
+       if (pszEscape[0] == '\\')
+       {
+@@ -3771,9 +3842,9 @@
+           szTmp[2] = '\0';
+       }
+ 
+-      strcat(szBuffer,  szTmp);
++      strlcat(szBuffer,  szTmp,bufferSize);
+     }
+-    strcat(szBuffer,  ") ");
++    strlcat(szBuffer,  ") ",bufferSize);
+     
+     return strdup(szBuffer);
+ }
+@@ -4084,7 +4155,7 @@
+             {
+                 if (!lp->items[i] || strlen(lp->items[i]) <= 0)
+                     continue;
+-                sprintf(szTmp, "%s_alias", lp->items[i]);
++                snprintf(szTmp, sizeof(szTmp), "%s_alias", lp->items[i]);
+                 pszFullName = msOWSLookupMetadata(&(lp->metadata), namespaces, szTmp);
+                 if (pszFullName)
+                 {
+diff -urNad mapserver-5.6.5~/mapogcfilter.h mapserver-5.6.5/mapogcfilter.h
+--- mapserver-5.6.5~/mapogcfilter.h	2009-07-06 12:29:03.000000000 -0400
++++ mapserver-5.6.5/mapogcfilter.h	2011-07-12 00:29:58.000000000 -0400
+@@ -113,8 +113,8 @@
+ MS_DLL_EXPORT char *FLTGetSQLExpression(FilterEncodingNode *psFilterNode,layerObj *lp);
+ MS_DLL_EXPORT char *FLTGetBinaryComparisonSQLExpresssion(FilterEncodingNode *psFilterNode, layerObj *lp);
+ MS_DLL_EXPORT char *FLTGetIsBetweenComparisonSQLExpresssion(FilterEncodingNode *psFilterNode, layerObj *lp);
+-MS_DLL_EXPORT char *FLTGetIsLikeComparisonSQLExpression(FilterEncodingNode *psFilterNode,
+-                                       int connectiontype);
++MS_DLL_EXPORT char *FLTGetIsLikeComparisonSQLExpression(FilterEncodingNode *psFilterNode, layerObj *lp);
++
+ MS_DLL_EXPORT char *FLTGetLogicalComparisonSQLExpresssion(FilterEncodingNode *psFilterNode,
+                                             layerObj *lp);
+ MS_DLL_EXPORT int FLTIsSimpleFilter(FilterEncodingNode *psFilterNode);
+diff -urNad mapserver-5.6.5~/mapogcsos.c mapserver-5.6.5/mapogcsos.c
+--- mapserver-5.6.5~/mapogcsos.c	2009-10-20 09:38:46.000000000 -0400
++++ mapserver-5.6.5/mapogcsos.c	2011-07-12 00:29:58.000000000 -0400
+@@ -1820,6 +1820,7 @@
+   char *pszProcedureValue = NULL;
+   int iItemPosition, status;
+   shapeObj sShape;
++  char* pszEscapedStr = NULL;
+ 
+   sBbox = map->extent;
+ 
+@@ -2051,15 +2052,25 @@
+               pszBuffer = msStringConcatenate(pszBuffer, "(");
+                             
+               if (!bSpatialDB)
+-                pszBuffer = msStringConcatenate(pszBuffer, "'[");
+-
+-              pszBuffer = msStringConcatenate(pszBuffer, (char *)pszProcedureItem);
++              {
++                  pszBuffer = msStringConcatenate(pszBuffer, "'[");
++                  pszBuffer = msStringConcatenate(pszBuffer, (char *)pszProcedureItem);
++              }
++              else
++              {
++                  pszEscapedStr = msLayerEscapePropertyName(lp, (char *)pszProcedureItem);
++                  pszBuffer = msStringConcatenate(pszBuffer, pszEscapedStr);
++                  msFree(pszEscapedStr);
++                  pszEscapedStr = NULL;
++              }
+ 
+               if (!bSpatialDB)
+                 pszBuffer = msStringConcatenate(pszBuffer, "]'");
+ 
+               pszBuffer = msStringConcatenate(pszBuffer, " = '");
+-              pszBuffer = msStringConcatenate(pszBuffer,  tokens[j]);
++              pszEscapedStr = msLayerEscapeSQLParam(lp, tokens[j]);
++              pszBuffer = msStringConcatenate(pszBuffer,  pszEscapedStr);
++              msFree(pszEscapedStr);
+               pszBuffer = msStringConcatenate(pszBuffer,  "')");
+             }
+                                 
+diff -urNad mapserver-5.6.5~/mapogr.cpp mapserver-5.6.5/mapogr.cpp
+--- mapserver-5.6.5~/mapogr.cpp	2010-01-18 13:55:29.000000000 -0500
++++ mapserver-5.6.5/mapogr.cpp	2011-07-12 00:29:58.000000000 -0400
+@@ -3458,6 +3458,66 @@
+ }
+ 
+ /************************************************************************/
++/*                           msOGREscapeSQLParam                        */
++/************************************************************************/
++char *msOGREscapeSQLParam(layerObj *layer, const char *pszString)
++{
++    char* pszEscapedStr =NULL;
++#ifdef USE_OGR
++    if(layer && pszString && strlen(pszString) > 0)
++    {
++        char* pszEscapedOGRStr =  CPLEscapeString(pszString, strlen(pszString),  
++		                                    CPLES_SQL ); 
++	pszEscapedStr = strdup(pszEscapedOGRStr);
++        CPLFree(pszEscapedOGRStr);
++	return pszEscapedStr; 
++    }
++#else
++/* ------------------------------------------------------------------
++ * OGR Support not included...
++ * ------------------------------------------------------------------ */
++
++  msSetError(MS_MISCERR, "OGR support is not available.", 
++             "msOGREscapeSQLParam()");
++  return NULL;
++
++#endif /* USE_OGR */  
++}
++
++
++/************************************************************************/
++/*                           msOGREscapeSQLParam                        */
++/************************************************************************/
++char *msOGREscapePropertyName(layerObj *layer, const char *pszString)
++{
++    char* pszEscapedStr =NULL;
++    int i =0;
++#ifdef USE_OGR
++    if(layer && pszString && strlen(pszString) > 0)
++    {
++        unsigned char ch;
++        for(i=0; (ch = ((unsigned char*)pszString)[i]) != '\0'; i++)
++        {
++            if ( !(isalnum(ch) || ch == '_' || ch > 127) )
++            {
++                return strdup("invalid_property_name");
++            }
++        }
++        pszEscapedStr = strdup(pszString);
++    }
++    return pszEscapedStr;
++#else
++/* ------------------------------------------------------------------
++ * OGR Support not included...
++ * ------------------------------------------------------------------ */
++
++  msSetError(MS_MISCERR, "OGR support is not available.", 
++             "msOGREscapePropertyName()");
++  return NULL;
++
++#endif /* USE_OGR */  
++}
++/************************************************************************/
+ /*                  msOGRLayerInitializeVirtualTable()                  */
+ /************************************************************************/
+ int
+@@ -3484,6 +3544,9 @@
+     /* layer->vtable->LayerCreateItems, use default */
+     /* layer->vtable->LayerGetNumFeatures, use default */
+ 
++    layer->vtable->LayerEscapeSQLParam = msOGREscapeSQLParam;
++    layer->vtable->LayerEscapePropertyName = msOGREscapePropertyName;
++
+     return MS_SUCCESS;
+ }
+ 
+diff -urNad mapserver-5.6.5~/mappostgis.c mapserver-5.6.5/mappostgis.c
+--- mapserver-5.6.5~/mappostgis.c	2010-03-22 09:18:57.000000000 -0400
++++ mapserver-5.6.5/mappostgis.c	2011-07-12 00:29:58.000000000 -0400
+@@ -549,7 +549,7 @@
+         return(MS_FAILURE);
+     }
+ 
+-    pgresult = PQexec(layerinfo->pgconn, sql);
++    pgresult = PQexecParams(layerinfo->pgconn, sql,0, NULL, NULL, NULL, NULL, 0);
+     if ( !pgresult || PQresultStatus(pgresult) != PGRES_TUPLES_OK) {
+         char *tmp1;
+         char *tmp2 = NULL;
+@@ -1774,7 +1774,7 @@
+         msDebug("msPostGISLayerWhichShapes query: %s\n", strSQL);
+     }
+ 
+-    pgresult = PQexec(layerinfo->pgconn, strSQL);
++    pgresult = PQexecParams(layerinfo->pgconn, strSQL,0, NULL, NULL, NULL, NULL, 0);
+ 
+     if ( layer->debug > 1 ) {
+         msDebug("msPostGISLayerWhichShapes query status: %s (%d)\n", PQresStatus(PQresultStatus(pgresult)), PQresultStatus(pgresult)); 
+@@ -1979,7 +1979,7 @@
+         msDebug("msPostGISLayerGetShape query: %s\n", strSQL);
+     }
+ 
+-    pgresult = PQexec(layerinfo->pgconn, strSQL);
++    pgresult = PQexecParams(layerinfo->pgconn, strSQL,0, NULL, NULL, NULL, NULL, 0);
+ 
+     /* Something went wrong. */
+     if ( (!pgresult) || (PQresultStatus(pgresult) != PGRES_TUPLES_OK) ) {
+@@ -2073,7 +2073,7 @@
+         msDebug("msPostGISLayerGetItems executing SQL: %s\n", sql);
+     }
+ 
+-    pgresult = PQexec(layerinfo->pgconn, sql);
++    pgresult = PQexecParams(layerinfo->pgconn, sql,0, NULL, NULL, NULL, NULL, 0);
+     
+     if ( (!pgresult) || (PQresultStatus(pgresult) != PGRES_TUPLES_OK) ) {
+         msSetError(MS_QUERYERR, "Error (%s) executing SQL: %s", "msPostGISLayerGetItems()", PQerrorMessage(layerinfo->pgconn), sql);
+diff -urNad mapserver-5.6.5~/mapserver.h mapserver-5.6.5/mapserver.h
+--- mapserver-5.6.5~/mapserver.h	2010-07-14 05:45:57.000000000 -0400
++++ mapserver-5.6.5/mapserver.h	2011-07-12 00:29:58.000000000 -0400
+@@ -1554,6 +1554,8 @@
+ 
+     int (*LayerCreateItems)(layerObj *layer, int nt);
+     int (*LayerGetNumFeatures)(layerObj *layer);
++    char* (*LayerEscapeSQLParam)(layerObj *layer, const char* pszString);
++    char* (*LayerEscapePropertyName)(layerObj *layer, const char* pszString);
+ };
+ #endif /*SWIG*/
+ 
+@@ -1953,6 +1955,9 @@
+ /* maplayer.c */
+ MS_DLL_EXPORT int msLayerGetNumFeatures(layerObj *layer);
+ 
++MS_DLL_EXPORT char *msLayerEscapeSQLParam(layerObj *layer, const char* pszString);
++MS_DLL_EXPORT char *msLayerEscapePropertyName(layerObj *layer, const char* pszString);
++
+ /* These are special because SWF is using these */
+ int msOGRLayerNextShape(layerObj *layer, shapeObj *shape);
+ int msOGRLayerGetItems(layerObj *layer);
