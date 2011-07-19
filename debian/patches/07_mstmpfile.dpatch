@@ -1,0 +1,38 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 07_mstmpfile.dpatch by Alan Boudreault <aboudreault@mapgears.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+diff -urNad mapserver-5.0.3~/maputil.c mapserver-5.0.3/maputil.c
+--- mapserver-5.0.3~/maputil.c	2007-11-01 15:02:59.000000000 -0400
++++ mapserver-5.0.3/maputil.c	2010-07-09 08:36:22.553683356 -0400
+@@ -1207,22 +1207,24 @@
+     char szPath[MS_MAXPATHLEN];
+     const char *fullFname;
+     char tmpId[128]; /* big enough for time + pid + ext */
++    const char *tmpBase = NULL;
+ 
+     if( ForcedTmpBase != NULL )
+     {
+-        strncpy( tmpId, ForcedTmpBase, sizeof(tmpId) );
++        tmpBase = ForcedTmpBase;
+     }
+     else 
+     {
+         /* We'll use tmpId and tmpCount to generate unique filenames */
+         sprintf(tmpId, "%lx_%x",(long)time(NULL),(int)getpid());
++        tmpBase = tmpId;
+     }
+ 
+     if (ext == NULL)  ext = "";
+-    tmpFname = (char*)malloc(strlen(tmpId) + 10  + strlen(ext) + 1);
++    tmpFname = (char*)malloc(strlen(tmpBase) + 10  + strlen(ext) + 1);
+ 
+     msAcquireLock( TLOCK_TMPFILE );
+-    sprintf(tmpFname, "%s_%x.%s", tmpId, tmpCount++, ext);
++    sprintf(tmpFname, "%s_%x.%s", tmpBase, tmpCount++, ext);
+     msReleaseLock( TLOCK_TMPFILE );
+ 
+     fullFname = msBuildPath3(szPath, mappath, tmppath, tmpFname);

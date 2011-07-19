@@ -7,3 +7,6 @@
 04_CVE-2009-0842
 05_CVE-2009-0843
 06_urlpath
+07_mstmpfile
+08_cl_debug_args
+09_wfs_sql_injection

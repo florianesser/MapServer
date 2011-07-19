@@ -1,3 +1,19 @@
+mapserver (5.0.3-3+lenny6) oldstable-security; urgency=high
+
+  * Fix possible SQL injection in WFS.
+    [http://trac.osgeo.org/mapserver/ticket/3874]
+
+ -- Alan Boudreault <aboudreault@mapgears.com>  Mon, 11 Jul 2011 23:46:23 -0400
+
+mapserver (5.0.3-3+lenny5) stable-security; urgency=high
+
+  * Fix Buffer overflow in msTmpFile function.
+    [http://trac.osgeo.org/mapserver/ticket/3484]
+  * Fix insecure mapserv CGI command-line debug args.
+    [http://trac.osgeo.org/mapserver/ticket/3485]
+
+ -- Alan Boudreault <aboudreault@mapgears.com>  Fri, 09 Jul 2010 08:37:43 -0400
+
 mapserver (5.0.3-3+lenny4) stable-security; urgency=high
 
   * Fix paths specified in url vulnerabilities.
