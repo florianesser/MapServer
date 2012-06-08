@@ -1,9 +1,13 @@
-mapserver (6.0.3-2~precise1) precise; urgency=low
+mapserver (6.0.3-2~precise4) precise; urgency=low
 
-  * Launchpad build for precise.
+  [Jerome Villeneuve Larouche]
+  * Launchpad build for Precise
+  * Added back the fixgeos patch
+
+  [Alan Boudreault]
   * Added multi-arch patch.
 
- -- Alan Boudreault <aboudreault@mapgears.com>  Tue, 22 May 2012 17:46:34 +0000
+ -- Jerome Villeneuve Larouche <jlarouche@mapgears.com>  Fri, 08 Jun 2012 13:34:12 +0000
 
 mapserver (6.0.3-1) unstable; urgency=low
 
