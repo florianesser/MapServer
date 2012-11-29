@@ -1,3 +1,9 @@
+mapserver (6.2.0-3~precise3) precise; urgency=low
+
+  * Updated control to use proj >=4.8.0
+
+ -- Jerome Villeneuve Larouche <jlarouche@mapgears.com>  Mon, 03 Dec 2012 18:51:42 -0500
+
 mapserver (6.2.0-3~precise1) precise; urgency=high
 
   * Launchpad build for Precise
