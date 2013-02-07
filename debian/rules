@@ -47,7 +47,8 @@ COMMON_CONFIG=	--prefix=/usr \
 		--with-fastcgi \
 		--with-agg \
 		--with-php \
-		--with-cairo
+		--with-cairo \
+		--with-libsvg-cairo
 
 rstoptions=--stylesheet=mapscript.css --link-stylesheet 
 

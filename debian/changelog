@@ -1,3 +1,9 @@
+mapserver (6.2.0-3~precise4) precise; urgency=high
+
+  * Added SVG support
+
+ -- Jerome Villeneuve Larouche <jlarouche@mapgears.com>  Thu, 07 Feb 2013 08:51:56 -0500
+
 mapserver (6.2.0-3~precise3) precise; urgency=low
 
   * Updated control to use proj >=4.8.0
