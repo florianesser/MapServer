@@ -1,20 +1,14 @@
-mapserver (6.2.0-3~precise4) precise; urgency=high
-
-  * Added SVG support
-
- -- Jerome Villeneuve Larouche <jlarouche@mapgears.com>  Thu, 07 Feb 2013 08:51:56 -0500
-
-mapserver (6.2.0-3~precise3) precise; urgency=low
-
-  * Updated control to use proj >=4.8.0
-
- -- Jerome Villeneuve Larouche <jlarouche@mapgears.com>  Mon, 03 Dec 2012 18:51:42 -0500
-
-mapserver (6.2.0-3~precise1) precise; urgency=high
+mapserver (6.2.1-2~precise2) precise; urgency=high
 
   * Launchpad build for Precise
 
- -- Jerome Villeneuve Larouche <jlarouche@mapgears.com>  Thu, 22 Nov 2012 20:58:46 +0000
+ -- Jerome Villeneuve Larouche <jlarouche@mapgears.com>  Thu, 25 Apr 2013 08:54:37 -0400
+
+mapserver (6.2.1-1) unstable; urgency=low
+
+  * New Upstream release
+
+ -- Jerome Villeneuve Larouche <jlarouche@mapgears.com>  Thu, 25 Apr 2013 08:53:21 -0400
 
 mapserver (6.2.0-2) unstable; urgency=low
 
