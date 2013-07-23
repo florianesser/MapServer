@@ -1,0 +1,71 @@
+Description: Fix FTBFS with multiarch libgd.
+ The linker knows where to find libgd when one uses -lgd, so stop
+ worrying where libgd.{a,so} are.
+Bug: http://bugs.debian.org/673165
+Author: Cyril Brulebois <kibi@debian.org>
+--- a/configure
++++ b/configure
+@@ -7649,17 +7649,7 @@ elif test -n "$with_gd" -a "$with_gd" !=
+   test -f $GD_DIR/include/gd/gd.h && GD_INCLUDE="$GD_DIR/include/gd"
+   test -f $GD_DIR/gd.h && GD_INCLUDE="$GD_DIR"
+ 
+-  test -f $GD_DIR/lib/libgd.a && GD_LIBDIR="$GD_DIR/lib"
+-  test -f $GD_DIR/lib64/libgd.a && GD_LIBDIR="$GD_DIR/lib64"
+-  test -f $GD_DIR/.libs/libgd.a && GD_LIBDIR="$GD_DIR/.libs"
+-  test -f $GD_DIR/_libs/libgd.a && GD_LIBDIR="$GD_DIR/_libs"
+-  test -f $GD_DIR/libgd.a && GD_LIBDIR="$GD_DIR"
+-
+-  test -f $GD_DIR/lib/libgd.so -o -f $GD_DIR/lib/libgd.sl -o -f $GD_DIR/lib/libgd.dylib && GD_LIBDIR="$GD_DIR/lib"
+-  test -f $GD_DIR/lib64/libgd.so -o -f $GD_DIR/lib/libgd.sl && GD_LIBDIR="$GD_DIR/lib64"
+-  test -f $GD_DIR/.libs/libgd.so -o -f $GD_DIR/.libs/libgd.sl -o -f $GD_DIR/.libs/libgd.dylib && GD_LIBDIR="$GD_DIR/.libs"
+-  test -f $GD_DIR/_libs/libgd.so -o -f $GD_DIR/_libs/libgd.sl -o -f $GD_DIR/_libs/libgd.dylib && GD_LIBDIR="$GD_DIR/_libs"
+-  test -f $GD_DIR/libgd.so -o -f $GD_DIR/libgd.sl -o -f $GD_DIR/libgd.dylib && GD_LIBDIR="$GD_DIR"
++  # Let the linker do its job, we really don't need to pass -L$GD_LIBDIR
+ 
+     echo "$as_me:$LINENO: checking for gdImageCreatePaletteFromTrueColor in -lgd" >&5
+ echo $ECHO_N "checking for gdImageCreatePaletteFromTrueColor in -lgd... $ECHO_C" >&6
+@@ -7805,9 +7795,9 @@ fi
+     GD_NEED_ICONV_LIB="$ICONV_LIB"
+   fi
+ 
+-  if test -n "$GD_INCLUDE" -a -n "$GD_LIBDIR" -a "$IS_GD2" = "true"; then
++  if test -n "$GD_INCLUDE" -a "$IS_GD2" = "true"; then
+       GD_INC=-I$GD_INCLUDE
+-      GD_LIB="-L$GD_LIBDIR -lgd"
++      GD_LIB="-lgd"
+       GD_XTRA_LIBS="$GD_XTRA_LIBS $GD_NEED_ICONV_LIB"
+       echo "$as_me:$LINENO: result:         using libgd 2.0.28 (or higher) from $GD_LIB $GD_XTRA_LIBS" >&5
+ echo "${ECHO_T}        using libgd 2.0.28 (or higher) from $GD_LIB $GD_XTRA_LIBS" >&6
+--- a/configure.in
++++ b/configure.in
+@@ -636,17 +636,7 @@ elif test -n "$with_gd" -a "$with_gd" !=
+   test -f $GD_DIR/include/gd/gd.h && GD_INCLUDE="$GD_DIR/include/gd"
+   test -f $GD_DIR/gd.h && GD_INCLUDE="$GD_DIR"
+ 
+-  test -f $GD_DIR/lib/libgd.a && GD_LIBDIR="$GD_DIR/lib"
+-  test -f $GD_DIR/lib64/libgd.a && GD_LIBDIR="$GD_DIR/lib64"
+-  test -f $GD_DIR/.libs/libgd.a && GD_LIBDIR="$GD_DIR/.libs"
+-  test -f $GD_DIR/_libs/libgd.a && GD_LIBDIR="$GD_DIR/_libs"
+-  test -f $GD_DIR/libgd.a && GD_LIBDIR="$GD_DIR"
+-
+-  test -f $GD_DIR/lib/libgd.so -o -f $GD_DIR/lib/libgd.sl -o -f $GD_DIR/lib/libgd.dylib && GD_LIBDIR="$GD_DIR/lib"
+-  test -f $GD_DIR/lib64/libgd.so -o -f $GD_DIR/lib/libgd.sl && GD_LIBDIR="$GD_DIR/lib64"
+-  test -f $GD_DIR/.libs/libgd.so -o -f $GD_DIR/.libs/libgd.sl -o -f $GD_DIR/.libs/libgd.dylib && GD_LIBDIR="$GD_DIR/.libs"
+-  test -f $GD_DIR/_libs/libgd.so -o -f $GD_DIR/_libs/libgd.sl -o -f $GD_DIR/_libs/libgd.dylib && GD_LIBDIR="$GD_DIR/_libs"
+-  test -f $GD_DIR/libgd.so -o -f $GD_DIR/libgd.sl -o -f $GD_DIR/libgd.dylib && GD_LIBDIR="$GD_DIR"
++  # Let the linker do its job, we really don't need to pass -L$GD_LIBDIR
+ 
+   dnl make sure it is GD 2.0.28+ with antialias and gdFontCacheSetup() and gdImageCreatePaletteFromTrueColor support
+   AC_CHECK_LIB(gd, gdImageCreatePaletteFromTrueColor,IS_GD2="true",,$GD_XTRA_LIBS -L$GD_LIBDIR)
+@@ -659,9 +649,9 @@ elif test -n "$with_gd" -a "$with_gd" !=
+     GD_NEED_ICONV_LIB="$ICONV_LIB"
+   fi
+ 
+-  if test -n "$GD_INCLUDE" -a -n "$GD_LIBDIR" -a "$IS_GD2" = "true"; then
++  if test -n "$GD_INCLUDE" -a "$IS_GD2" = "true"; then
+       GD_INC=-I$GD_INCLUDE
+-      GD_LIB="-L$GD_LIBDIR -lgd"
++      GD_LIB="-lgd"
+       GD_XTRA_LIBS="$GD_XTRA_LIBS $GD_NEED_ICONV_LIB"
+       AC_MSG_RESULT([        using libgd 2.0.28 (or higher) from $GD_LIB $GD_XTRA_LIBS])
+       AC_ADD_RUNPATH("$GD_LIBDIR")

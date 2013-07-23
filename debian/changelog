@@ -1,3 +1,12 @@
+mapserver (6.0.1-3.1) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * Fix FTBFS with multiarch libgd by just using -lgd instead of trying to
+    locate libgd.{a,so}, new patch: multiarch-libgd (Closes: #673165).
+  * Set urgency to “high” for the RC bug fix, needed for the gdal transition.
+
+ -- Cyril Brulebois <kibi@debian.org>  Tue, 22 May 2012 01:28:15 +0200
+
 mapserver (6.0.1-3) unstable; urgency=low
 
   * Let the configure script search in the system directory for jpeg stuff.
