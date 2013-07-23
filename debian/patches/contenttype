@@ -1,0 +1,21 @@
+Description: Fix parsing POST request when Content-Type has an encoding appended.
+Origin: https://github.com/faegi/mapserver/commit/426193cf5f6b34c97cceef2aca4649c604756cd0
+Bug: https://github.com/mapserver/mapserver/pull/4585
+Last-Update 2013-05-09
+--- a/cgiutil.c	2013-05-09 03:05:00.000000000 +0200
++++ b/cgiutil.c	2013-05-09 03:07:25.000000000 +0200
+@@ -166,8 +166,12 @@
+ 
+     /* if the content_type is application/x-www-form-urlencoded, 
+        we have to parse it like the QUERY_STRING variable */
+-    if(strcmp(request->contenttype, "application/x-www-form-urlencoded") == 0)   
+-    {
++    //if(strcmp(request->contenttype, "application/x-www-form-urlencoded") == 0) {
++    /*
++     * Cherry picked fix for strict Content-Type matching from:
++     * https://github.com/faegi/mapserver/commit/426193cf5f6b34c97cceef2aca4649c604756cd0
++     */
++    if(strncmp(request->contenttype, "application/x-www-form-urlencoded", strlen("application/x-www-form-urlencoded")) == 0) {
+       while( data_len > 0 && isspace(post_data[data_len-1]) )
+         post_data[--data_len] = '\0';
+ 

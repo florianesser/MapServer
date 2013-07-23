@@ -8,6 +8,8 @@ mapserver (6.0.1-4) unstable; urgency=low
   [ Bas Couwenberg ]
   * Link executables with -ldl. Thanks Colin Watson for the patch.
     (closes: #709186)
+  * Cherry pick fix for strict Content-Type matching from v6.2.1:
+    https://github.com/faegi/mapserver/commit/426193cf5f6b34c97cceef2aca4649c604756cd0
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 14 Mar 2012 21:43:53 +0100
 
