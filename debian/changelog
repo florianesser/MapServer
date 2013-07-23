@@ -1,3 +1,12 @@
+mapserver (6.0.1-3.2) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix "FTBFS: ld: cannot find -lstdc++":
+    add build dependency on libstdc++6-4.6-dev, thanks Arto Jantunen.
+    (Closes: #684808)
+
+ -- gregor herrmann <gregoa@debian.org>  Wed, 29 Aug 2012 17:48:52 +0200
+
 mapserver (6.0.1-3.1) unstable; urgency=high
 
   * Non-maintainer upload.
