@@ -59,7 +59,7 @@ MS_CXXFLAGS=$(MS_CFLAGS)
 
 configure-stamp:
 	dh_testdir
-	./configure $(COMMON_CONFIG) CFLAGS="$(MS_CFLAGS)" CXXFLAGS="$(MS_CXXFLAGS)" XTRALIBS=-ldl
+	./configure $(COMMON_CONFIG) CFLAGS="$(MS_CFLAGS)" CXXFLAGS="$(MS_CXXFLAGS)"
 
 
 	touch configure-stamp
@@ -67,7 +67,7 @@ configure-stamp:
 configure-php5-stamp: clean-first-build
 	dh_testdir
 	./configure $(COMMON_CONFIG) \
-		--with-php=/usr/include/php5  CFLAGS="$(MS_CFLAGS)" CXXFLAGS="$(MS_CXXFLAGS)" XTRALIBS=-ldl
+		--with-php=/usr/include/php5  CFLAGS="$(MS_CFLAGS)" CXXFLAGS="$(MS_CXXFLAGS)"
 
 	touch configure-php5-stamp
 
