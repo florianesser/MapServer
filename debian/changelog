@@ -3,7 +3,6 @@ mapserver (6.0.1-4) stable-proposed-updates; urgency=low
   [ Francesco Paolo Lovergine ]
   * Fixed typo that prevented AGG use in debian/rules.
     (closes: #663875)
-  * Migrated to debhelper level 9 and policy bumped to 3.9.3. 
 
   [ Bas Couwenberg ]
   * Link executables with -ldl. Thanks Colin Watson for the patch.
