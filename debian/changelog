@@ -1,4 +1,4 @@
-mapserver (6.0.1-4) stable-proposed-updates; urgency=low
+mapserver (6.0.1-3.2+deb7u1) stable-proposed-updates; urgency=low
 
   [ Francesco Paolo Lovergine ]
   * Fixed typo that prevented AGG use in debian/rules.
