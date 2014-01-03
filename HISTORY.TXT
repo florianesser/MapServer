@@ -11,6 +11,28 @@ the top of the list.)
 
 For a complete change history, please see the Git log comments.
 
+Current Version (future 6.0.4, GIT branch-6-0):
+-----------------------------------------------
+
+Version 6.0.4 (2014-01-02):
+---------------------------
+
+- Fix potential SQL Injection with postgis TIME filters (#4834)
+
+- Adjusted WCS 2.0 to WCS Core 2.0.1 and GMLCOV 1.0.1 corrigenda (#4003)
+
+- Adjusted mediatype to multipart/related in WCS 2.0 (#4003)
+
+- Fixed bugs with WCS 1.1/2.0 with VSIMEM (#4369)
+
+- Fixed "msGetMarkerSize() called on unloaded pixmap symbol" in mapsymbol.c (#4225)
+
+- Fixed PHP MapScript support for PHP 5.4 (#4309)
+
+- Fix msOGREscapeSQLParam could return random data (#4335)
+
+- Made format parameter for WCS 2.0 GetCoverage requests optional  (#4003)
+
 Version 6.0.3 (2012-05-18):
 ---------------------------
 

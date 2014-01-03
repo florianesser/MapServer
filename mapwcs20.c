@@ -771,7 +771,8 @@ static int msWCSParseRequest20_XMLGetCoverage(
         else if (EQUAL((char *) child->name, "Mediatype"))
         {
             char *content = (char *)xmlNodeGetContent(child);
-            if(content != NULL && EQUAL(content, "multipart/mixed"))
+            if(content != NULL && (EQUAL(content, "multipart/mixed")
+                               || EQUAL(content, "multipart/related")))
             {
                 params->multipart = MS_TRUE;
             }
@@ -1228,7 +1229,8 @@ int msWCSParseRequest20(cgiRequestObj *request, wcs20ParamsObjPtr params)
         }
         else if (EQUAL(key, "MEDIATYPE"))
         {
-            if(EQUAL(value, "multipart/mixed"))
+            if (EQUAL(value, "multipart/mixed")
+               || EQUAL(value, "multipart/related"))
             {
                 params->multipart = MS_TRUE;
             }
@@ -1499,6 +1501,16 @@ static char *msWCSGetFormatsList20( mapObj *map, layerObj *layer )
     if( layer != NULL
         && (value = msOWSGetEncodeMetadata( &(layer->metadata),"CO","formats",
                                             NULL )) != NULL )
+    {
+        tokens = msStringSplit(value, ' ', &numtokens);
+    }
+
+    /* -------------------------------------------------------------------- */
+    /*      Parse from map.web metadata.                                    */
+    /* -------------------------------------------------------------------- */
+
+    else if((value = msOWSGetEncodeMetadata( &(map->web.metadata), "CO", "formats",
+                                                NULL)) != NULL )
     {
         tokens = msStringSplit(value, ' ', &numtokens);
     }
@@ -1923,11 +1935,11 @@ static int msWCSWriteDocument20(mapObj* map, xmlDocPtr psDoc)
 
     if (encoding)
     {
-        msIO_printf("Content-type: text/xml; charset=%s%c%c", encoding,10,10);
+        msIO_printf("Content-type: application/gml+xml; charset=%s%c%c", encoding,10,10);
     }
     else
     {
-        msIO_printf("Content-type: text/xml%c%c",10,10);
+        msIO_printf("Content-type: application/gml+xml%c%c",10,10);
     }
 
     context = msIO_getHandler(stdout);
@@ -1950,6 +1962,7 @@ static int msWCSWriteFile20(mapObj* map, imageObj* image, wcs20ParamsObjPtr para
 {
     int status;
     char* filename = NULL;
+    char *base_dir = NULL;
     const char *fo_filename;
     int i;
 
@@ -1984,11 +1997,12 @@ static int msWCSWriteFile20(mapObj* map, imageObj* image, wcs20ParamsObjPtr para
         if( GDALGetMetadataItem( hDriver, GDAL_DCAP_VIRTUALIO, NULL )
             != NULL )
         {
+            base_dir = msTmpFile(map, map->mappath, "/vsimem/wcsout", NULL);
             if( fo_filename )
-                filename = msStrdup(CPLFormFilename("/vsimem/wcsout",
+                filename = msStrdup(CPLFormFilename(base_dir,
                                                     fo_filename,NULL));
             else
-                filename = msStrdup(CPLFormFilename("/vsimem/wcsout", 
+                filename = msStrdup(CPLFormFilename(base_dir,
                                                     "out", pszExtension ));
 
             /*            CleanVSIDir( "/vsimem/wcsout" ); */
@@ -2027,7 +2041,7 @@ static int msWCSWriteFile20(mapObj* map, imageObj* image, wcs20ParamsObjPtr para
         if( fo_filename != NULL )
             msIO_fprintf( stdout, 
                 "Content-ID: coverage/%s\n"
-                "Content-Disposition: attachment; filename=%s%c%c",
+                "Content-Disposition: INLINE; filename=%s%c%c",
                 fo_filename,
                 fo_filename,
                 10, 10 );
@@ -2056,7 +2070,7 @@ static int msWCSWriteFile20(mapObj* map, imageObj* image, wcs20ParamsObjPtr para
     /* -------------------------------------------------------------------- */
 #ifdef GDAL_DCAP_VIRTUALIO
     {
-        char **all_files = CPLReadDir( "/vsimem/wcsout" );
+        char **all_files = CPLReadDir( base_dir );
         int count = CSLCount(all_files);
 
         if( msIO_needBinaryStdout() == MS_FAILURE )
@@ -2092,7 +2106,7 @@ static int msWCSWriteFile20(mapObj* map, imageObj* image, wcs20ParamsObjPtr para
 
             multipart = MS_TRUE;
             msIO_printf(
-                "Content-Type: multipart/mixed; boundary=wcs%c%c", 10, 10);
+                "Content-Type: multipart/related; boundary=wcs%c%c", 10, 10);
         }
 
         for( i = 0; i < count; i++ )
@@ -2119,14 +2133,14 @@ static int msWCSWriteFile20(mapObj* map, imageObj* image, wcs20ParamsObjPtr para
                 "Content-Description: coverage data\n"
                 "Content-Transfer-Encoding: binary\n"
                 "Content-ID: coverage/%s\n"
-                "Content-Disposition: attachment; filename=%s%c%c",
+                "Content-Disposition: INLINE; filename=%s%c%c",
                 mimetype,
                 all_files[i],
                 all_files[i],
                 10, 10 );
 
             fp = VSIFOpenL(
-                CPLFormFilename("/vsimem/wcsout", all_files[i], NULL),
+                CPLFormFilename(base_dir, all_files[i], NULL),
                 "rb" );
             if( fp == NULL )
             {
@@ -2142,9 +2156,10 @@ static int msWCSWriteFile20(mapObj* map, imageObj* image, wcs20ParamsObjPtr para
 
             VSIFCloseL( fp );
 
-            VSIUnlink( all_files[i] );
+            VSIUnlink( CPLFormFilename(base_dir, all_files[i], NULL) );
         }
 
+        msFree(base_dir);
         msFree(filename);
         CSLDestroy( all_files );
         msReleaseLock( TLOCK_GDAL );
@@ -2863,10 +2878,12 @@ static int msWCSGetCapabilities20_CreateProfiles(
         MS_WCS_20_PROFILE_CORE,     NULL,
         MS_WCS_20_PROFILE_KVP,      NULL,
         MS_WCS_20_PROFILE_POST,     NULL,
-        MS_WCS_20_PROFILE_CRS,     NULL,
-        MS_WCS_20_PROFILE_IMAGECRS, NULL,
+        MS_WCS_20_PROFILE_GML,      NULL,
+        MS_WCS_20_PROFILE_GML_MULTIPART, NULL,
+        MS_WCS_20_PROFILE_GML_SPECIAL, NULL,
+        MS_WCS_20_PROFILE_GML_GEOTIFF, "image/tiff",
         MS_WCS_20_PROFILE_GEOTIFF,  "image/tiff",
-        MS_WCS_20_PROFILE_GML_GEOTIFF, NULL,
+        MS_WCS_20_PROFILE_CRS,     NULL,
         MS_WCS_20_PROFILE_SCALING, NULL,
         MS_WCS_20_PROFILE_RANGESUBSET, NULL,
         NULL, NULL /* guardian */
@@ -2978,7 +2995,7 @@ int msWCSGetCapabilities20(mapObj *map, cgiRequestObj *req,
             psXLinkNs = NULL,
             psWcsNs = NULL,
             psGmlNs = NULL;
-    char *script_url=NULL, *script_url_encoded=NULL;
+    char *script_url=NULL, *script_url_encoded=NULL, *format_list=NULL;
     int i;
 
     /* -------------------------------------------------------------------- */
@@ -3108,8 +3125,16 @@ int msWCSGetCapabilities20(mapObj *map, cgiRequestObj *req,
     /* -------------------------------------------------------------------- */
     /*      Service metadata.                                               */
     /* -------------------------------------------------------------------- */
-    /* it is mandatory, but unused for now */
-    xmlAddChild(psRootNode, xmlNewNode(psWcsNs, BAD_CAST "ServiceMetadata"));
+
+    if ( MS_WCS_20_CAPABILITIES_INCLUDE_SECTION(params, "ServiceMetadata") )
+    {
+        psNode = xmlNewChild(psRootNode, psWcsNs, BAD_CAST "ServiceMetadata", NULL);
+
+        /* Add formats list */
+        format_list = msWCSGetFormatsList20(map, NULL);
+        msLibXml2GenerateList(psNode, psWcsNs, "formatSupported", format_list, ',');
+        msFree(format_list);
+    }
 
     /* -------------------------------------------------------------------- */
     /*      Contents section.                                               */
@@ -3226,8 +3251,8 @@ static int msWCSDescribeCoverage20_CoverageDescription(mapObj *map,
         /* -------------------------------------------------------------------- */
         /*      SupportedCRS                                                    */
         /* -------------------------------------------------------------------- */
-
-        {
+        /* for now, WCS 2.0 does not allow per coverage CRS definitions */
+        /*{
             xmlNodePtr psSupportedCrss;
             char *owned_value;
 
@@ -3255,12 +3280,13 @@ static int msWCSDescribeCoverage20_CoverageDescription(mapObj *map,
                     BAD_CAST "NativeCRS", BAD_CAST cm.srs_uri);
 
             msFree(owned_value);
-        }
+        }*/
 
         /* -------------------------------------------------------------------- */
         /*      SupportedFormats                                                */
         /* -------------------------------------------------------------------- */
-        {
+        /* for now, WCS 2.0 does not allow per coverage format definitions */
+        /*{
             xmlNodePtr psSupportedFormats;
             char *format_list;
 
@@ -3275,18 +3301,20 @@ static int msWCSDescribeCoverage20_CoverageDescription(mapObj *map,
                         "SupportedFormat", format_list, ',');
             }
 
-            if(cm.native_format != NULL)
-            {
-                xmlNewChild(psSupportedFormats, psWcsNs,
-                        BAD_CAST "NativeFormat", BAD_CAST cm.native_format);
-            }
-            else
-            {
-                msDebug("msWCSDescribeCoverage20_CoverageDescription(): "
-                        "No native format specified.\n");
-            }
-
             msFree(format_list);
+        }*/
+
+        /* -------------------------------------------------------------------- */
+        /*      nativeFormat                                                    */
+        /* -------------------------------------------------------------------- */
+        xmlNewChild(psSP, psWcsNs,
+                BAD_CAST "nativeFormat", BAD_CAST (cm.native_format ?
+                                                    cm.native_format : ""));
+
+        if (!cm.native_format)
+        {
+            msDebug("msWCSDescribeCoverage20_CoverageDescription(): "
+                    "No native format specified.\n");
         }
     }
 
@@ -3857,9 +3885,26 @@ int msWCSGetCoverage20(mapObj *map, cgiRequestObj *request,
                map->width, map->height, map->cellsize, map->extent.minx,
                map->extent.miny, map->extent.maxx, map->extent.maxy);
 
+    /**
+     * Which format to use?
+     *
+     * 1) format parameter
+     * 2) native format (from metadata) or GDAL format of the input dataset
+     * 3) exception
+     **/
+
     if (!params->format)
     {
-        msSetError(MS_WCSERR, "Required parameter FORMAT was not supplied.",
+        if (cm.native_format)
+        {
+            params->format = msStrdup(cm.native_format);
+        }
+    }
+
+    if (!params->format)
+    {
+        msSetError(MS_WCSERR, "Output format could not be automatically determined. "
+                "Use the FORMAT parameter to specify a format.",
                 "msWCSGetCoverage20()");
         return msWCSException(map, "MissingParameterValue", "format",
                 params->version);
@@ -4001,7 +4046,7 @@ int msWCSGetCoverage20(mapObj *map, cgiRequestObj *request,
         wcs20coverageMetadataObj tmpCm;
         char *srs_uri, *default_filename;
         const char *filename;
-        char *file_ref;
+        char *file_ref, *role;
         int length = 0, swapAxes;
 
         /* Create Document  */
@@ -4054,13 +4099,23 @@ int msWCSGetCoverage20(mapObj *map, cgiRequestObj *request,
         default_filename = msStringConcatenate(default_filename, MS_IMAGE_EXTENSION(image->format));
 
         filename = msGetOutputFormatOption(image->format, "FILENAME", default_filename);
-        length = strlen("coverage/") + strlen(filename) + 1;
+        length = strlen("cid:coverage/") + strlen(filename) + 1;
         file_ref = msSmallMalloc(length);
-        strlcpy(file_ref, "coverage/", length);
+        strlcpy(file_ref, "cid:coverage/", length);
         strlcat(file_ref, filename, length);
 
+        if(EQUAL(MS_IMAGE_MIME_TYPE(map->outputformat), "image/tiff")) {
+            length = strlen(MS_WCS_20_PROFILE_GML_GEOTIFF) + 1;
+            role = msSmallMalloc(length);
+            strlcpy(role, MS_WCS_20_PROFILE_GML_GEOTIFF, length);
+        } else {
+            length = strlen(MS_IMAGE_MIME_TYPE(map->outputformat)) + 1;
+            role = msSmallMalloc(length);
+            strlcpy(role, MS_IMAGE_MIME_TYPE(map->outputformat), length);
+        }
+
         xmlNewNsProp(psRangeParameters, psXLinkNs, BAD_CAST "href", BAD_CAST file_ref);
-        xmlNewNsProp(psRangeParameters, psXLinkNs, BAD_CAST "role", BAD_CAST MS_IMAGE_MIME_TYPE(map->outputformat));
+        xmlNewNsProp(psRangeParameters, psXLinkNs, BAD_CAST "role", BAD_CAST role);
         xmlNewNsProp(psRangeParameters, psXLinkNs, BAD_CAST "arcrole", BAD_CAST "fileReference");
 
         xmlNewChild(psFile, psGmlNs, BAD_CAST "fileReference", BAD_CAST file_ref);
@@ -4069,13 +4124,14 @@ int msWCSGetCoverage20(mapObj *map, cgiRequestObj *request,
 
         msWCSCommon20_CreateRangeType(layer, &cm, bandlist, psGmlNs, psGmlcovNs, psSweNs, psXLinkNs, psRootNode);
 
-        msIO_printf( "Content-Type: multipart/mixed; boundary=wcs%c%c"
+        msIO_printf( "Content-Type: multipart/related; boundary=wcs%c%c"
                      "--wcs\n", 10, 10);
 
         msWCSWriteDocument20(map, psDoc);
         msWCSWriteFile20(map, image, params, 1);
 
         msFree(file_ref);
+        msFree(role);
         xmlFreeDoc(psDoc);
         xmlCleanupParser();
     }
@@ -4115,7 +4171,7 @@ int msWCSDispatch20(mapObj *map, cgiRequestObj *request, owsRequestObj *ows_requ
     if(status == MS_FAILURE)
     {
         msDebug("msWCSDispatch20(): Parse error occurred.\n");
-        msWCSException20(map, "InvalidParameterValue", "request", "2.0.0" );
+        msWCSException20(map, "InvalidParameterValue", "request", "2.0" );
         msWCSFreeParamsObj20(params);
         return MS_FAILURE;
     }
@@ -4165,7 +4221,7 @@ int msWCSDispatch20(mapObj *map, cgiRequestObj *request, owsRequestObj *ows_requ
             if (version == OWS_VERSION_BADFORMAT)
             {
                 msWCSException20(map, "InvalidParameterValue",
-                        "request", "2.0.0" );
+                        "request", "2.0" );
                 msWCSFreeParamsObj20(params);
                 return MS_FAILURE;
             }
@@ -4180,9 +4236,9 @@ int msWCSDispatch20(mapObj *map, cgiRequestObj *request, owsRequestObj *ows_requ
 
     /* Now the version has to be set */
     if(params->version == NULL
-        || !EQUAL(params->version, "2.0.0"))
+        || (!EQUAL(params->version, "2.0.0") && !EQUAL(params->version, "2.0.1")))
     {
-        msDebug("msWCSDispatch20(): version and service are not compliant with WCS 2.0.0\n");
+        msDebug("msWCSDispatch20(): version and service are not compliant with WCS 2.0\n");
         msWCSFreeParamsObj20(params);
         msResetErrorList();
         return MS_DONE;
@@ -4211,7 +4267,7 @@ int msWCSDispatch20(mapObj *map, cgiRequestObj *request, owsRequestObj *ows_requ
                 msSetError(MS_WCSERR, "Layer name '%s' is not a valid NCName.",
                         "msWCSDescribeCoverage20()", map->layers[i]->name);
                 msWCSFreeParamsObj20(params);
-                return msWCSException(map, "mapserv", "Internal", "2.0.0");
+                return msWCSException(map, "mapserv", "Internal", "2.0");
             }
         }
     }
@@ -4242,9 +4298,9 @@ int msWCSDispatch20(mapObj *map, cgiRequestObj *request, owsRequestObj *ows_requ
 
 #else /* defined(USE_LIBXML2) */
     if(params->service && params->version &&
-            EQUAL(params->service, "WCS") && EQUAL(params->version, "2.0.0"))
+            EQUAL(params->service, "WCS") && (EQUAL(params->version, "2.0.0") || EQUAL(params->version, "2.0.1")))
     {
-        msSetError(MS_WCSERR, "WCS 2.0.0 needs mapserver to be compiled with libxml2.", "msWCSDispatch20()");
+        msSetError(MS_WCSERR, "WCS 2.0 needs mapserver to be compiled with libxml2.", "msWCSDispatch20()");
         return msWCSException(map, "mapserv", "NoApplicableCode", "1.0.0");
     }
     else
