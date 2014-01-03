@@ -11,7 +11,7 @@
 #  - Run the VCVARS32.BAT script to initialize the VC++ environment variables
 #  - Start the build with:  nmake /f makefile.vc
 #
-# $Id: nmake.opt 10748 2010-11-20 23:50:57Z tamas $
+# $Id$
 #
 # Contents:
 #   Section I:   Mapserver Compilation Options
@@ -136,7 +136,7 @@ DEBUG=/DDEBUG
 # following line to reflect the missing functions on your platform.
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #STRINGS=-DNEED_STRCASECMP -DNEED_STRNCASECMP -DNEED_STRDUP
-STRINGS=-DNEED_STRCASECMP -DNEED_STRNCASECMP -DNEED_STRLCAT -DNEED_STRRSTR -DNEED_STRCASESTR
+STRINGS=-DNEED_STRCASECMP -DNEED_STRNCASECMP -DNEED_STRLCAT -DNEED_STRRSTR -DNEED_STRCASESTR -DNEED_STRLCPY
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Threading

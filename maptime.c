@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: maptime.c 7418 2008-02-29 00:02:49Z nsavard $
+ * $Id:$
  *
  * Project:  MapServer
  * Purpose:  Date/Time utility functions.
@@ -36,7 +36,7 @@
 #include "maptime.h"
 #include "maperror.h"
 
-MS_CVSID("$Id: maptime.c 7418 2008-02-29 00:02:49Z nsavard $")
+MS_CVSID("$Id$")
 
 typedef struct {
   char pattern[64];

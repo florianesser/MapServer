@@ -8,7 +8,7 @@
 #  - Run the VCVARS32.BAT script to initialize the VC++ environment variables
 #  - Start the build with:  nmake /f makefile.vc
 #
-# $Id: Makefile.vc 9275 2009-08-27 21:31:29Z assefa $
+# $Id$
 #
 
 # Flag indicating to the option files that this is the build of PHP/MapScript

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: layerobject.c 7349 2008-02-06 17:11:09Z nsavard $
+ * $Id:$
  *
  * Project:  MapServer
  * Purpose:  Functions for operating on a layerObj that don't belong in a
@@ -36,7 +36,7 @@
 #  include "cpl_conv.h"
 #endif
 
-MS_CVSID("$Id: layerobject.c 7349 2008-02-06 17:11:09Z nsavard $")
+MS_CVSID("$Id$")
 
 /* ===========================================================================
    msInsertClass

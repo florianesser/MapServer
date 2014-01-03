@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: maptemplate.h 9503 2009-10-23 04:39:51Z sdlime $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Template processing related declarations.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapagg.h 8984 2009-05-01 07:06:05Z tbonfort $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  AGG template library types.

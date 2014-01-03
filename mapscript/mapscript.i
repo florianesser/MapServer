@@ -1,6 +1,6 @@
 /* 
 ===========================================================================
- $Id: mapscript.i 7207 2007-12-22 20:32:11Z tamas $
+ $Id$
  
  Project:  MapServer
  Purpose:  SWIG interface file for the MapServer mapscript module

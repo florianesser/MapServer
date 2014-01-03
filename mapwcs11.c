@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapwcs11.c 9498 2009-10-20 13:38:46Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  OpenGIS Web Coverage Server (WCS) 1.1.0 Implementation.  This
@@ -35,7 +35,7 @@
 #include "mapthread.h"
 #include "mapwcs.h"
 
-MS_CVSID("$Id: mapwcs11.c 9498 2009-10-20 13:38:46Z aboudreault $")
+MS_CVSID("$Id$")
 
 #if defined(USE_WCS_SVR) && defined(USE_LIBXML2)
 
@@ -1235,7 +1235,7 @@ int  msWCSReturnCoverage11( wcsParamsObj *params, mapObj *map,
             return msWCSException11(map, "mapserv", "NoApplicableCode", params->version);
         }
 
-        msIO_fprintf( stdout, "--wcs--%c%c", 10, 10 );
+        msIO_fprintf( stdout, "\n--wcs--%c%c", 10, 10 );
         return MS_SUCCESS;
     }
 
@@ -1331,7 +1331,7 @@ int  msWCSReturnCoverage11( wcsParamsObj *params, mapObj *map,
         CSLDestroy( all_files );
         msReleaseLock( TLOCK_GDAL );
 
-        msIO_fprintf( stdout, "--wcs--%c%c", 10, 10 );
+        msIO_fprintf( stdout, "\n--wcs--%c%c", 10, 10 );
         return MS_SUCCESS;
     }
 #endif /* def GDAL_DCAP_VIRTUALIO */    

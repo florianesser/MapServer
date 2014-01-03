@@ -37,7 +37,7 @@
 
 #include <ctype.h>
 
-MS_CVSID("$Id: maptemplate.c 10198 2010-06-01 16:45:15Z sdlime $")
+MS_CVSID("$Id$")
 
 static char *processLine(mapservObj *mapserv, char *instr, FILE *stream, int mode);
 

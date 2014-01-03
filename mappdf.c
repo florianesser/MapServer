@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mappdf.c 9472 2009-10-16 18:17:05Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  An api for PDF format output using the pdflib library
@@ -36,7 +36,7 @@
 #endif
 #include "mapserver.h"
 
-MS_CVSID("$Id: mappdf.c 9472 2009-10-16 18:17:05Z aboudreault $")
+MS_CVSID("$Id$")
 
 /* -------------------------------------------------------------------- */
 /*      prototypes.                                                     */

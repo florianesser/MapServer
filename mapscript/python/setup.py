@@ -1,4 +1,4 @@
-# $Id: setup.py 9510 2009-10-25 03:55:11Z hobu $
+# $Id$
 #
 # setup.py file for MapScript
 #

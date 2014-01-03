@@ -1,5 +1,5 @@
 /* ===========================================================================
-   $Id: style.i 9653 2010-01-02 20:35:06Z tamas $
+   $Id$
  
    Project:  MapServer
    Purpose:  SWIG interface file for mapscript styleObj extensions

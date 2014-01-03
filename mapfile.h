@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapfile.h 9194 2009-07-21 15:49:45Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Keyword definitions for the mapfiles and symbolfiles.

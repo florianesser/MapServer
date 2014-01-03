@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapscript_i.c 10113 2010-04-24 17:07:20Z sdlime $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Interface file for MapServer PHP scripting extension 

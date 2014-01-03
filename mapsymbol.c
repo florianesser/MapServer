@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapsymbol.c 9657 2010-01-03 14:28:28Z tamas $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  symbolObj related functions.
@@ -35,7 +35,7 @@
 #include "mapcopy.h"
 #include "mapthread.h"
 
-MS_CVSID("$Id: mapsymbol.c 9657 2010-01-03 14:28:28Z tamas $")
+MS_CVSID("$Id$")
 
 extern int msyylex(void); /* lexer globals */
 extern void msyyrestart(FILE *);

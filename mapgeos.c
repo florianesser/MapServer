@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapgeos.c 9569 2009-11-27 21:16:01Z dmorissette $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  MapServer-GEOS integration.

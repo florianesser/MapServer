@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sym2img.c 7418 2008-02-29 00:02:49Z nsavard $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Commandline utility to render symbols to a raster.
@@ -32,7 +32,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: sym2img.c 7418 2008-02-29 00:02:49Z nsavard $")
+MS_CVSID("$Id$")
 
 #define MAXCOLORS 256
 #define CELLSIZE 100

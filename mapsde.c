@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapsde.c 9956 2010-03-19 18:25:33Z pramsey $
+ * $Id$
  *    
  * Project:  MapServer
  * Purpose:  Implements SDE CONNECTIONTYPE.

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mapcontext.c 9544 2009-11-11 20:39:16Z assefa $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  OGC Web Map Context implementation
@@ -28,7 +28,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: mapcontext.c 9544 2009-11-11 20:39:16Z assefa $")
+MS_CVSID("$Id$")
 
 #if defined(USE_WMS_LYR) && defined(USE_OGR)
 

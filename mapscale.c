@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapscale.c 10346 2010-07-13 16:21:57Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Scale object rendering. 
@@ -29,7 +29,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: mapscale.c 10346 2010-07-13 16:21:57Z aboudreault $")
+MS_CVSID("$Id$")
 
 #define VMARGIN 3 /* buffer around the scalebar */
 #define HMARGIN 3

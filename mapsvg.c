@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapsvg.c 9941 2010-03-15 14:36:43Z assefa $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  SVG output
@@ -38,7 +38,7 @@
 #include "mapserver.h"
 #include "mapcopy.h"
 
-MS_CVSID("$Id: mapsvg.c 9941 2010-03-15 14:36:43Z assefa $")
+MS_CVSID("$Id$")
 
 
 static int msIO_fprintfgz(FILE *fp, int bCompressed, const char *format, ... )

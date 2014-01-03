@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapshape.c 9509 2009-10-24 04:45:32Z sdlime $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implements support for shapefile access.
@@ -38,7 +38,7 @@
 #include <assert.h>
 #include "mapserver.h"
 
-MS_CVSID("$Id: mapshape.c 9509 2009-10-24 04:45:32Z sdlime $")
+MS_CVSID("$Id$")
 
 /* Only use this macro on 32-bit integers! */
 #define SWAP_FOUR_BYTES(data) \

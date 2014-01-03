@@ -1,4 +1,4 @@
-// $Id: MapThread.java 6896 2007-09-19 13:09:13Z tbonfort $
+// $Id$
 //
 // See README_THREADTEST.TXT for usage details.
 //

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: maplibxml2.c 7685 2008-06-17 16:01:49Z tomkralidis $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  libxml2 convenience wrapper functions
@@ -36,7 +36,7 @@
 #include<libxml/xpath.h>
 #include<libxml/xpathInternals.h>
 
-MS_CVSID("$Id: maplibxml2.c 7685 2008-06-17 16:01:49Z tomkralidis $")
+MS_CVSID("$Id$")
 
 /**
  * msLibXml2GenerateList()

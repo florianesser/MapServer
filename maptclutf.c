@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: maptclutf.c 7497 2008-04-05 20:35:53Z warmerdam $
+ * $Id:$
  *
  * Project:  MapServer
  * Purpose:  Implementation of msUTF8ToUniChar()
@@ -89,7 +89,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: maptclutf.c 7497 2008-04-05 20:35:53Z warmerdam $")
+MS_CVSID("$Id$")
 
 
 /* The source code of Tcl_UtfToUniChar() was borrowed from tclUtf.c

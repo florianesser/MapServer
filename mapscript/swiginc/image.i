@@ -1,5 +1,5 @@
 /* ===========================================================================
-   $Id: image.i 9499 2009-10-20 15:18:09Z aboudreault $
+   $Id$
  
    Project:  MapServer
    Purpose:  SWIG interface file for mapscript imageObj extensions

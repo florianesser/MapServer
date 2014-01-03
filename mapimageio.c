@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapimageio.c 9105 2009-06-15 19:09:44Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Low level PNG/JPEG image io functions independent of GD.
@@ -33,7 +33,7 @@
 
 #include "jpeglib.h"
 
-MS_CVSID("$Id: mapimageio.c 9105 2009-06-15 19:09:44Z warmerdam $")
+MS_CVSID("$Id$")
 
 typedef struct _streamInfo {
     FILE *fp;

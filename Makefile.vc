@@ -9,7 +9,7 @@
 #  - Run the VCVARS32.BAT script to initialize the VC++ environment variables
 #  - Start the build with:  nmake /f makefile.vc
 #
-# $Id: Makefile.vc 9284 2009-09-01 10:12:05Z tamas $
+# $Id$
 #
 MAPSERVER_ROOT = .
 

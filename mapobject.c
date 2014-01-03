@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapobject.c 10868 2011-01-14 15:08:26Z assefa $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Functions for operating on a mapObj that don't belong in a
@@ -35,7 +35,7 @@
 #  include "cpl_conv.h"
 #endif
 
-MS_CVSID("$Id: mapobject.c 10868 2011-01-14 15:08:26Z assefa $")
+MS_CVSID("$Id$")
 
 void freeWeb(webObj *web);
 void freeScalebar(scalebarObj *scalebar);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapchart.c 9382 2009-10-06 16:19:09Z tbonfort $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implementation of dynamic charting (MS-RFC-29)
@@ -30,7 +30,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: mapchart.c 9382 2009-10-06 16:19:09Z tbonfort $")
+MS_CVSID("$Id$")
 
 #define MS_CHART_TYPE_PIE 1
 #define MS_CHART_TYPE_BAR 2

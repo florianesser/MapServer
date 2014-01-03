@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: testexpr.c 7419 2008-03-02 14:41:53Z sdlime $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Commandline tester for expression evaluation
@@ -33,7 +33,7 @@
 #include "mapparser.h"
 #include "mapfile.h"
 
-MS_CVSID("$Id: testexpr.c 7419 2008-03-02 14:41:53Z sdlime $")
+MS_CVSID("$Id$")
 
 extern int msyyparse();
 extern int msyylex();

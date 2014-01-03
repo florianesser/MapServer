@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: maplibxml2.h 7685 2008-06-17 16:01:49Z tomkralidis $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  libxml2 convenience wrapper functions include file

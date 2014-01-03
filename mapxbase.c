@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapxbase.c 7418 2008-02-29 00:02:49Z nsavard $
+ * $Id:$
  *
  * Project:  MapServer
  * Purpose:  .dbf access API.  Derived from shapelib, and relicensed with 
@@ -32,7 +32,7 @@
 #include <stdlib.h> /* for atof() and atoi() */
 #include <math.h>
 
-MS_CVSID("$Id: mapxbase.c 7418 2008-02-29 00:02:49Z nsavard $")
+MS_CVSID("$Id$")
 
 /************************************************************************/
 /*                             SfRealloc()                              */

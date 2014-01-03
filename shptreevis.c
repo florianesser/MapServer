@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: shptreevis.c 7418 2008-02-29 00:02:49Z nsavard $
+ * $Id:$
  *
  * Project:  MapServer
  * Purpose:  Utility program to visualize a quadtree
@@ -35,7 +35,7 @@
 #endif
 #include <stdlib.h>
 
-MS_CVSID("$Id: shptreevis.c 7418 2008-02-29 00:02:49Z nsavard $")
+MS_CVSID("$Id$")
 
 #ifdef SHPT_POLYGON
    #undef MAPSERVER

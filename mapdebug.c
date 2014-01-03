@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapdebug.c 7923 2008-09-23 17:58:55Z dmorissette $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implementation of debug/logging, msDebug() and related functions.
@@ -53,7 +53,7 @@
 #define vsnprintf _vsnprintf
 #endif 
 
-MS_CVSID("$Id: mapdebug.c 7923 2008-09-23 17:58:55Z dmorissette $")
+MS_CVSID("$Id$")
 
 
 #ifndef USE_THREAD

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: scalebar.c 7418 2008-02-29 00:02:49Z nsavard $
+ * $Id:$
  *
  * Project:  MapServer
  * Purpose:  Commandline scalebar generating utility, mostly for testing.
@@ -29,7 +29,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: scalebar.c 7418 2008-02-29 00:02:49Z nsavard $")
+MS_CVSID("$Id$")
 
 int main(int argc, char *argv[])
 {

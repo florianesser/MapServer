@@ -1,6 +1,6 @@
 
 /******************************************************************************
- * $Id: swig_csharp_extensions.i 10808 2010-12-20 16:03:35Z tamas $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Fix for the SWIG Interface problems (early GC)

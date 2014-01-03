@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapowscommon.c 8170 2008-12-02 17:28:34Z tomkralidis $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  OGC OWS Common Implementation for use by MapServer OGC code
@@ -42,7 +42,7 @@
 #include "mapowscommon.h"
 #include "maplibxml2.h"
 
-MS_CVSID("$Id: mapowscommon.c 8170 2008-12-02 17:28:34Z tomkralidis $")
+MS_CVSID("$Id$")
 
 /**
  * msOWSCommonNegotiateVersion()

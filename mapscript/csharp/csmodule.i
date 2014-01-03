@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: csmodule.i 7848 2008-08-14 11:03:43Z tamas $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  C#-specific enhancements to MapScript

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapproject.h 9349 2009-09-25 16:03:46Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Declarations of the projectionObj and related functions.

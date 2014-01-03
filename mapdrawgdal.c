@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapdrawgdal.c 10012 2010-03-25 14:42:48Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Code for drawing GDAL raster layers.  Called from 
@@ -33,7 +33,7 @@
 #include "mapresample.h"
 #include "mapthread.h"
 
-MS_CVSID("$Id: mapdrawgdal.c 10012 2010-03-25 14:42:48Z warmerdam $")
+MS_CVSID("$Id$")
 
 extern int InvGeoTransform( double *gt_in, double *gt_out );
 

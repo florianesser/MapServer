@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapwcs.h 7497 2008-04-05 20:35:53Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  OpenGIS Web Coverage Server (WCS) Declarations.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapraster.c 10093 2010-04-10 15:26:28Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  msDrawRasterLayer(): generic raster layer drawing, including
@@ -36,7 +36,7 @@
 #include "mapresample.h"
 #include "mapthread.h"
 
-MS_CVSID("$Id: mapraster.c 10093 2010-04-10 15:26:28Z warmerdam $")
+MS_CVSID("$Id$")
 
 extern int msyyparse(void);
 extern int msyylex(void);

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mapwfs11.c 9498 2009-10-20 13:38:46Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  OGC WFS 1.1.0 implementation. This file holds some WFS 1.1.0 
@@ -30,7 +30,7 @@
 #include "mapserver.h"
 #include "mapows.h"
 
-MS_CVSID("$Id: mapwfs11.c 9498 2009-10-20 13:38:46Z aboudreault $")
+MS_CVSID("$Id$")
 
 #if defined(USE_WFS_SVR) && defined(USE_LIBXML2)
 #include "maplibxml2.h"

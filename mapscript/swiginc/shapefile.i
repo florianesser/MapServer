@@ -1,5 +1,5 @@
 /* ===========================================================================
-   $Id: shapefile.i 8015 2008-11-11 18:14:14Z pramsey $
+   $Id$
  
    Project:  MapServer
    Purpose:  SWIG interface file for mapscript shapefileObj extensions

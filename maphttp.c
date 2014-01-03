@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: maphttp.c 9016 2009-05-15 11:34:38Z dmorissette $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Utility functions to access files via HTTP (requires libcurl)
@@ -37,7 +37,7 @@
 #include "mapows.h"
 #include "mapthread.h"
 
-MS_CVSID("$Id: maphttp.c 9016 2009-05-15 11:34:38Z dmorissette $")
+MS_CVSID("$Id$")
 
 #include <time.h>
 #ifndef _WIN32

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: maprasterquery.c 10001 2010-03-24 16:30:22Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implementation of query operations on rasters. 
@@ -32,7 +32,7 @@
 #include "mapresample.h"
 #include "mapthread.h"
 
-MS_CVSID("$Id: maprasterquery.c 10001 2010-03-24 16:30:22Z warmerdam $")
+MS_CVSID("$Id$")
 
 int msRASTERLayerGetShape(layerObj *layer, shapeObj *shape, int tile, long record);
 int msRASTERLayerGetItems(layerObj *layer);

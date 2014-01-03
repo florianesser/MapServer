@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: maperror.c 10483 2010-08-27 04:15:34Z sdlime $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implementation of msSetError(), msDebug() and related functions.
@@ -41,7 +41,7 @@
 #endif
 #include <stdarg.h>
 
-MS_CVSID("$Id: maperror.c 10483 2010-08-27 04:15:34Z sdlime $")
+MS_CVSID("$Id$")
 
 static char *ms_errorCodes[MS_NUMERRORCODES] = {"",
 						"Unable to access file.",
@@ -408,14 +408,26 @@ void msWriteErrorImage(mapObj *map, char *filename, int blank) {
   if (format == NULL || (!MS_DRIVER_GD(format) && !MS_DRIVER_AGG(format))) 
     format = msCreateDefaultOutputFormat( NULL, "GD/PC256" );
 
-  img.img.gd = gdImageCreate(width, height);
-  color = gdImageColorAllocate(img.img.gd, map->imagecolor.red, 
-                               map->imagecolor.green,
-                               map->imagecolor.blue); /* BG color */
-  nBlack = gdImageColorAllocate(img.img.gd, 0,0,0); /* Text color */
+  if(format->imagemode == MS_IMAGEMODE_RGB || format->imagemode == MS_IMAGEMODE_RGBA) {
+    img.img.gd = gdImageCreateTrueColor(width, height);
+        gdImageAlphaBlending(img.img.gd, 0);
+    color = gdTrueColor(map->imagecolor.red,
+                        map->imagecolor.green,
+                        map->imagecolor.blue); /* BG color */
+    nBlack = gdTrueColor(0,0,0); /* Text color */
+
+    gdImageFilledRectangle(img.img.gd, 0, 0, width, height, color);
+
+  } else {
+    img.img.gd = gdImageCreate(width, height);
+    color = gdImageColorAllocate(img.img.gd, map->imagecolor.red, 
+                                 map->imagecolor.green,
+                                 map->imagecolor.blue); /* BG color */
+    nBlack = gdImageColorAllocate(img.img.gd, 0,0,0); /* Text color */
+  }
 
   if (map->outputformat && map->outputformat->transparent)
-    gdImageColorTransparent(img.img.gd, 0);
+    gdImageColorTransparent(img.img.gd, color);
 
 
   nTextLength = strlen(errormsg); 

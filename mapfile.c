@@ -42,7 +42,7 @@
 #  include "gdal.h"
 #endif
 
-MS_CVSID("$Id: mapfile.c 10731 2010-11-15 18:49:36Z aboudreault $")
+MS_CVSID("$Id$")
 
 extern int msyylex(void);
 extern void msyyrestart(FILE *);

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: php_mapscript.c 10204 2010-06-02 13:57:48Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  PHP/MapScript extension for MapServer.  External interface 
@@ -57,7 +57,7 @@
 #undef gdImageCopy
 #endif
 
-#define PHPMS_VERSION "($Revision: 10204 $ $Date: 2010-06-02 06:57:48 -0700 (Wed, 02 Jun 2010) $)"
+#define PHPMS_VERSION "($Revision$ $Date$)"
 
 #ifndef DLEXPORT 
 #define DLEXPORT ZEND_DLEXPORT
@@ -16732,7 +16732,8 @@ DLEXPORT void php_ms_IO_getStdoutBufferBytes(INTERNAL_FUNCTION_PARAMETERS)
 
     php_write(gdBuf.data, gdBuf.size TSRMLS_CC);
 
-    RETURN_LONG(buf->data_len);
+    /* return the gdBuf.size, which is the "really used length" of the msIOBuffer */ 
+    RETURN_LONG(gdBuf.size); 
 }
 
 DLEXPORT void php_ms_IO_stripStdoutBufferContentType(INTERNAL_FUNCTION_PARAMETERS)

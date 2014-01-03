@@ -1,5 +1,5 @@
 /* ===========================================================================
-   $Id: owsrequest.i 7805 2008-07-09 17:15:16Z hobu $
+   $Id$
  
    Project:  MapServer
    Purpose:  SWIG interface file for manipulating OGC request stuff via

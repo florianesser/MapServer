@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mapwfslayer.c 10264 2010-06-29 16:20:53Z dmorissette $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implementation of WFS CONNECTIONTYPE - client to WFS servers
@@ -37,7 +37,7 @@
 #include <process.h>
 #endif
 
-MS_CVSID("$Id: mapwfslayer.c 10264 2010-06-29 16:20:53Z dmorissette $")
+MS_CVSID("$Id$")
 
 #define WFS_V_0_0_14  14
 #define WFS_V_1_0_0  100

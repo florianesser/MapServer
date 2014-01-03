@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pyextend.i 9453 2009-10-13 20:06:23Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Python-specific extensions to MapScript objects

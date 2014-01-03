@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapprimitive.c 10379 2010-07-22 08:23:12Z tbonfort $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implementations for rectObj, pointObj, lineObj, shapeObj, etc.
@@ -32,7 +32,7 @@
 #include <assert.h>
 #include <locale.h>
 
-MS_CVSID("$Id: mapprimitive.c 10379 2010-07-22 08:23:12Z tbonfort $")
+MS_CVSID("$Id$")
 
 typedef enum {CLIP_LEFT, CLIP_MIDDLE, CLIP_RIGHT} CLIP_STATE;
 

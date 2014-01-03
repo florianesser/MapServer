@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: php_proj.c 8496 2009-02-04 16:46:23Z assefa $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  PHP wraper function to PROJ4 projection module.

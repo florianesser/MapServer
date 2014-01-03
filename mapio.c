@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapio.c 7694 2008-06-18 21:26:45Z dmorissette $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implementations for MapServer IO redirection capability.
@@ -37,7 +37,7 @@
 #include <io.h>
 #endif
 
-MS_CVSID("$Id: mapio.c 7694 2008-06-18 21:26:45Z dmorissette $")
+MS_CVSID("$Id$")
 
 static int is_msIO_initialized = MS_FALSE;
 

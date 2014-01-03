@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapthread.c 9374 2009-10-01 22:23:58Z warmerdam $
+ * $Id$
  *
  * Project:  UMN MapServer
  * Purpose:  Support code for abstracting thread issues.
@@ -137,7 +137,7 @@ files instead.
 #include "mapserver.h"
 #include "mapthread.h"
 
-MS_CVSID("$Id: mapthread.c 9374 2009-10-01 22:23:58Z warmerdam $")
+MS_CVSID("$Id$")
 
 #if defined(USE_THREAD)
 static int thread_debug = 0;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapserv.h 7549 2008-04-30 20:50:31Z dmorissette $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Declarations supporting mapserv.c.

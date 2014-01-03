@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cgiutil.h 7998 2008-10-23 03:35:48Z sdlime $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  cgiRequestObj and CGI parsing utility related declarations.

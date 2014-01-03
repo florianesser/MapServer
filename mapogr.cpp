@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mapogr.cpp 10545 2010-09-30 11:52:36Z tamas $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  OGR Link
@@ -40,7 +40,7 @@
 #  include "ogr_srs_api.h"
 #endif
 
-MS_CVSID("$Id: mapogr.cpp 10545 2010-09-30 11:52:36Z tamas $")
+MS_CVSID("$Id$")
 
 #if defined(GDAL_VERSION_NUM) && (GDAL_VERSION_NUM < 1400)
 #  define ACQUIRE_OLD_OGR_LOCK   msAcquireLock( TLOCK_OGR )
@@ -599,7 +599,10 @@ static char **msOGRGetValues(layerObj *layer, OGRFeatureH hFeature)
             if (hStylePart && OGR_ST_GetType(hStylePart) == OGRSTCLabel)
                 hLabelStyle = hStylePart;
             else if (hStylePart)
+            {
                 OGR_ST_Destroy(hStylePart);
+                hStylePart =  NULL;
+            }
 
           /* Setting up the size units according to msOGRLayerGetAutoStyle*/
           if (hStylePart && layer->map)
@@ -897,7 +900,10 @@ static char **msOGRGetValues(layerObj *layer, OGRFeatureH hFeature)
         if (poStylePart && poStylePart->GetType() == OGRSTCLabel)
             poLabelStyle = (OGRStyleLabel*)poStylePart;
         else if (poStylePart)
+        {
             delete poStylePart;
+            poStylePart = NULL;
+        }
         /* Setting up the size units according to msOGRLayerGetAutoStyle*/
         if (poStylePart && layer->map)
             poStylePart->SetUnit(OGRSTUPixel, layer->map->cellsize*72.0*39.37);
@@ -3465,6 +3471,66 @@ void msOGRCleanup( void )
 }
 
 /************************************************************************/
+/*                           msOGREscapeSQLParam                        */
+/************************************************************************/
+char *msOGREscapeSQLParam(layerObj *layer, const char *pszString)
+{
+    char* pszEscapedStr =NULL;
+#ifdef USE_OGR
+    if(layer && pszString && strlen(pszString) > 0)
+    {
+        char* pszEscapedOGRStr =  CPLEscapeString(pszString, strlen(pszString),  
+		                                    CPLES_SQL ); 
+	pszEscapedStr = strdup(pszEscapedOGRStr);
+        CPLFree(pszEscapedOGRStr);
+	return pszEscapedStr; 
+    }
+#else
+/* ------------------------------------------------------------------
+ * OGR Support not included...
+ * ------------------------------------------------------------------ */
+
+  msSetError(MS_MISCERR, "OGR support is not available.", 
+             "msOGREscapeSQLParam()");
+  return NULL;
+
+#endif /* USE_OGR */  
+}
+
+
+/************************************************************************/
+/*                           msOGREscapeSQLParam                        */
+/************************************************************************/
+char *msOGREscapePropertyName(layerObj *layer, const char *pszString)
+{
+    char* pszEscapedStr =NULL;
+    int i =0;
+#ifdef USE_OGR
+    if(layer && pszString && strlen(pszString) > 0)
+    {
+        unsigned char ch;
+        for(i=0; (ch = ((unsigned char*)pszString)[i]) != '\0'; i++)
+        {
+            if ( !(isalnum(ch) || ch == '_' || ch > 127) )
+            {
+                return strdup("invalid_property_name");
+            }
+        }
+        pszEscapedStr = strdup(pszString);
+    }
+    return pszEscapedStr;
+#else
+/* ------------------------------------------------------------------
+ * OGR Support not included...
+ * ------------------------------------------------------------------ */
+
+  msSetError(MS_MISCERR, "OGR support is not available.", 
+             "msOGREscapePropertyName()");
+  return NULL;
+
+#endif /* USE_OGR */  
+}
+/************************************************************************/
 /*                  msOGRLayerInitializeVirtualTable()                  */
 /************************************************************************/
 int
@@ -3490,6 +3556,9 @@ msOGRLayerInitializeVirtualTable(layerObj *layer)
     layer->vtable->LayerSetTimeFilter = msLayerMakeBackticsTimeFilter;
     /* layer->vtable->LayerCreateItems, use default */
     /* layer->vtable->LayerGetNumFeatures, use default */
+
+    layer->vtable->LayerEscapeSQLParam = msOGREscapeSQLParam;
+    layer->vtable->LayerEscapePropertyName = msOGREscapePropertyName;
 
     return MS_SUCCESS;
 }

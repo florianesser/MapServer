@@ -1,5 +1,5 @@
 /* ===========================================================================   
-   $Id: resultcache.i 7799 2008-07-09 04:31:58Z sdlime $
+   $Id$
 
    Project:  MapServer
    Purpose:  SWIG interface file for mapscript resultCacheObj extensions

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapmygis.c 9200 2009-07-22 04:20:44Z sdlime $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implements the MySQL/"MyGIS" connection type support.
@@ -36,7 +36,7 @@
 #include <netinet/in.h>
 #endif
 
-MS_CVSID("$Id: mapmygis.c 9200 2009-07-22 04:20:44Z sdlime $")
+MS_CVSID("$Id$")
 
 #ifndef FLT_MAX
 #define FLT_MAX 25000000.0

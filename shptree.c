@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: shptree.c 8015 2008-11-11 18:14:14Z pramsey $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Commandline utility to generate .qix shapefile spatial indexes.
@@ -31,7 +31,7 @@
 #include "maptree.h"
 #include <string.h>
 
-MS_CVSID("$Id: shptree.c 8015 2008-11-11 18:14:14Z pramsey $")
+MS_CVSID("$Id$")
 
 char* AddFileSuffix ( const char * Filename, const char * Suffix ) {
   char	*pszFullname, *pszBasename;

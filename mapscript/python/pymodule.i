@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pymodule.i 9497 2009-10-20 03:27:18Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Python-specific enhancements to MapScript

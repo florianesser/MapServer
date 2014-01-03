@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapwcs.c 10001 2010-03-24 16:30:22Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  OpenGIS Web Coverage Server (WCS) Implementation.
@@ -32,7 +32,7 @@
 #include "mapthread.h"
 #include <assert.h>
 
-MS_CVSID("$Id: mapwcs.c 10001 2010-03-24 16:30:22Z warmerdam $")
+MS_CVSID("$Id$")
 
 #ifdef USE_WCS_SVR
 

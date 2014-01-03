@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: epplib.c 7375 2008-02-12 20:32:39Z sdlime $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Low level EPP file access, supports drawEPP() in mapraster.c.
@@ -34,7 +34,7 @@
 #include "epplib.h"
 #include "mapserver.h"
 
-MS_CVSID("$Id: epplib.c 7375 2008-02-12 20:32:39Z sdlime $")
+MS_CVSID("$Id$")
 
 static int REVERSE; /* set to 1 on bigendian machines */
 

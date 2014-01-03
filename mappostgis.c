@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mappostgis.c 10760 2010-11-24 17:29:47Z pramsey $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  PostGIS CONNECTIONTYPE support.
@@ -68,7 +68,7 @@
 
 #ifdef USE_POSTGIS
 
-MS_CVSID("$Id: mappostgis.c 10760 2010-11-24 17:29:47Z pramsey $")
+MS_CVSID("$Id$")
 
 /*
 ** msPostGISCloseConnection()
@@ -549,7 +549,7 @@ int msPostGISRetrievePK(layerObj *layer) {
         return(MS_FAILURE);
     }
 
-    pgresult = PQexec(layerinfo->pgconn, sql);
+    pgresult = PQexecParams(layerinfo->pgconn, sql,0, NULL, NULL, NULL, NULL, 0);
     if ( !pgresult || PQresultStatus(pgresult) != PGRES_TUPLES_OK) {
         char *tmp1;
         char *tmp2 = NULL;
@@ -1774,7 +1774,7 @@ int msPostGISLayerWhichShapes(layerObj *layer, rectObj rect) {
         msDebug("msPostGISLayerWhichShapes query: %s\n", strSQL);
     }
 
-    pgresult = PQexec(layerinfo->pgconn, strSQL);
+    pgresult = PQexecParams(layerinfo->pgconn, strSQL,0, NULL, NULL, NULL, NULL, 0);
 
     if ( layer->debug > 1 ) {
         msDebug("msPostGISLayerWhichShapes query status: %s (%d)\n", PQresStatus(PQresultStatus(pgresult)), PQresultStatus(pgresult)); 
@@ -1782,7 +1782,10 @@ int msPostGISLayerWhichShapes(layerObj *layer, rectObj rect) {
 
     /* Something went wrong. */
     if (!pgresult || PQresultStatus(pgresult) != PGRES_TUPLES_OK) {
-        msSetError(MS_QUERYERR, "Error (%s) executing query: %s", "msPostGISLayerWhichShapes()", PQerrorMessage(layerinfo->pgconn), strSQL);
+        if ( layer->debug ) {
+	    msDebug("Error (%s) executing query: %s", "msPostGISLayerWhichShapes()\n", PQerrorMessage(layerinfo->pgconn), strSQL);
+	}
+        msSetError(MS_QUERYERR, "Error executing query: %s ", "msPostGISLayerWhichShapes()", PQerrorMessage(layerinfo->pgconn));
         free(strSQL);
         if (pgresult) {
             PQclear(pgresult);
@@ -1979,11 +1982,14 @@ int msPostGISLayerGetShape(layerObj *layer, shapeObj *shape, int tile, long reco
         msDebug("msPostGISLayerGetShape query: %s\n", strSQL);
     }
 
-    pgresult = PQexec(layerinfo->pgconn, strSQL);
+    pgresult = PQexecParams(layerinfo->pgconn, strSQL,0, NULL, NULL, NULL, NULL, 0);
 
     /* Something went wrong. */
     if ( (!pgresult) || (PQresultStatus(pgresult) != PGRES_TUPLES_OK) ) {
-        msSetError(MS_QUERYERR, "Error (%s) executing SQL: %s", "msPostGISLayerGetShape()", PQerrorMessage(layerinfo->pgconn), strSQL );
+        if ( layer->debug ) {
+	    msDebug("Error (%s) executing SQL: %s", "msPostGISLayerGetShape()\n", PQerrorMessage(layerinfo->pgconn), strSQL );
+        }            
+        msSetError(MS_QUERYERR, "Error executing SQL: %s", "msPostGISLayerGetShape()", PQerrorMessage(layerinfo->pgconn));
 
         if (pgresult) {
             PQclear(pgresult);
@@ -2073,10 +2079,13 @@ int msPostGISLayerGetItems(layerObj *layer) {
         msDebug("msPostGISLayerGetItems executing SQL: %s\n", sql);
     }
 
-    pgresult = PQexec(layerinfo->pgconn, sql);
+    pgresult = PQexecParams(layerinfo->pgconn, sql,0, NULL, NULL, NULL, NULL, 0);
     
     if ( (!pgresult) || (PQresultStatus(pgresult) != PGRES_TUPLES_OK) ) {
-        msSetError(MS_QUERYERR, "Error (%s) executing SQL: %s", "msPostGISLayerGetItems()", PQerrorMessage(layerinfo->pgconn), sql);
+        if ( layer->debug ) {
+	  msDebug("Error (%s) executing SQL: %s", "msPostGISLayerGetItems()\n", PQerrorMessage(layerinfo->pgconn), sql);
+	}
+        msSetError(MS_QUERYERR, "Error executing SQL: %s", "msPostGISLayerGetItems()", PQerrorMessage(layerinfo->pgconn));
         if (pgresult) {
             PQclear(pgresult);
         }
@@ -2152,6 +2161,11 @@ int msPostGISLayerSetTimeFilter(layerObj *lp, const char *timestring, const char
 
     if (!lp || !timestring || !timefield)
       return MS_FALSE;
+
+    if( strchr(timestring,'\'') || strchr(timestring, '\\') ) {
+       msSetError(MS_MISCERR, "Invalid time filter.", "msPostGISLayerSetTimeFilter()");
+       return MS_FALSE;
+    }
 
     if (strstr(timestring, ",") == NULL && 
         strstr(timestring, "/") == NULL) /* discrete time */
@@ -2538,6 +2552,42 @@ int msPostGISLayerSetTimeFilter(layerObj *lp, const char *timestring, const char
     return MS_FALSE;
 }
 
+
+char *msPostGISEscapeSQLParam(layerObj *layer, const char *pszString)
+{
+#ifdef USE_POSTGIS
+    msPostGISLayerInfo *layerinfo = NULL;
+    int nError;
+    size_t nSrcLen;
+    char* pszEscapedStr =NULL;
+
+    if (layer && pszString && strlen(pszString) > 0)
+    {
+        if(!msPostGISLayerIsOpen(layer))
+          msPostGISLayerOpen(layer);
+    
+        assert(layer->layerinfo != NULL);
+
+        layerinfo = (msPostGISLayerInfo *) layer->layerinfo;
+        nSrcLen = strlen(pszString);
+        pszEscapedStr = (char*) malloc( 2 * nSrcLen + 1);
+        PQescapeStringConn (layerinfo->pgconn, pszEscapedStr, pszString, nSrcLen, &nError);
+        if (nError != 0)
+        {
+            free(pszEscapedStr);
+            pszEscapedStr = NULL;
+        }
+    }
+    return pszEscapedStr;
+#else
+    msSetError( MS_MISCERR,
+                "PostGIS support is not available.",
+                "msPostGISEscapeSQLParam()");
+    return NULL;
+#endif
+}
+
+
 int msPostGISLayerInitializeVirtualTable(layerObj *layer) {
     assert(layer != NULL);
     assert(layer->vtable != NULL);
@@ -2560,5 +2610,8 @@ int msPostGISLayerInitializeVirtualTable(layerObj *layer) {
     /* layer->vtable->LayerCreateItems, use default */
     /* layer->vtable->LayerGetNumFeatures, use default */
 
+#ifdef USE_POSTGIS
+    layer->vtable->LayerEscapeSQLParam = msPostGISEscapeSQLParam;
+#endif
     return MS_SUCCESS;
 }

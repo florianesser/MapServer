@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tile4ms.c 7785 2008-07-03 23:47:28Z pramsey $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Create shapefile of rectangles from extents of several shapefiles 
@@ -43,7 +43,7 @@
 #include "mapserver.h"
 #include <string.h>
 
-MS_CVSID("$Id: tile4ms.c 7785 2008-07-03 23:47:28Z pramsey $")
+MS_CVSID("$Id$")
 
 /***********************************************************************/
 int process_shapefiles(char *metaFileNameP, char *tileFileNameP, 

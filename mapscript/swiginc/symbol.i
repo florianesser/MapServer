@@ -1,5 +1,5 @@
 /* ===========================================================================
-   $Id: symbol.i 6375 2007-07-24 03:32:43Z sdlime $
+   $Id$
  
    Project:  MapServer
    Purpose:  SWIG interface file for mapscript symbolObj extensions

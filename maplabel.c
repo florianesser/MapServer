@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: maplabel.c 9462 2009-10-15 09:20:56Z tbonfort $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Labeling Implementation.
@@ -38,7 +38,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: maplabel.c 9462 2009-10-15 09:20:56Z tbonfort $")
+MS_CVSID("$Id$")
 
 
 /**

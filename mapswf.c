@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapswf.c 9472 2009-10-16 18:17:05Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Macromedia flash output
@@ -40,7 +40,7 @@
 #include "mapserver.h"
 #include "mapswf.h"
 
-MS_CVSID("$Id: mapswf.c 9472 2009-10-16 18:17:05Z aboudreault $")
+MS_CVSID("$Id$")
 
 static char gszFilename[128];
 static char gszAction[256];

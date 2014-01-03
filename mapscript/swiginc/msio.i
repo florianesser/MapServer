@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msio.i 7506 2008-04-09 15:50:30Z nsavard $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Definitions for MapServer IO redirection capability.
@@ -31,7 +31,7 @@
  ****************************************************************************/
 
 
-/* $Id: msio.i 7506 2008-04-09 15:50:30Z nsavard $ */
+/* $Id$ */
 
 void msIO_resetHandlers(void);
 void msIO_installStdoutToBuffer(void);

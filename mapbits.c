@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapbits.c 8755 2009-03-10 13:35:19Z jlacroix $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implementation of bit array functions.
@@ -32,7 +32,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: mapbits.c 8755 2009-03-10 13:35:19Z jlacroix $")
+MS_CVSID("$Id$")
 
 #include <limits.h>
 

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: php_mapscript_util.c 8445 2009-01-21 16:32:09Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  PHP/MapScript extension for MapServer : Utility functions

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapproject.c 8022 2008-11-19 01:27:37Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  projectionObj / PROJ.4 interface.
@@ -32,7 +32,7 @@
 #include "mapthread.h"
 #include <assert.h>
 
-MS_CVSID("$Id: mapproject.c 8022 2008-11-19 01:27:37Z warmerdam $")
+MS_CVSID("$Id$")
 
 #ifdef USE_PROJ
 static int msTestNeedWrap( pointObj pt1, pointObj pt2, pointObj pt2_geo,

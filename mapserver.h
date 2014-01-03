@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapserver.h 10867 2011-01-14 14:56:21Z dmorissette $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Primary MapServer include file.
@@ -33,11 +33,11 @@
 /*
 ** MapServer version - to be updated for every release 
 */
-#define MS_VERSION "5.6.6"
+#define MS_VERSION "5.6.9"
 
 #define MS_VERSION_MAJOR    5
 #define MS_VERSION_MINOR    6
-#define MS_VERSION_REV      6
+#define MS_VERSION_REV      9
 
 #define MS_VERSION_NUM (MS_VERSION_MAJOR*10000+MS_VERSION_MINOR*100+MS_VERSION_REV)
 
@@ -372,6 +372,8 @@ extern "C" {
 #define MS_REFCNT_INIT(obj) obj->refcount=1
 #define MS_REFCNT_DECR_IS_NOT_ZERO(obj) (MS_REFCNT_DECR(obj))>0
 #define MS_REFCNT_DECR_IS_ZERO(obj) (MS_REFCNT_DECR(obj))<=0
+
+#define MS_IS_VALID_ARRAY_INDEX(index, size) ((index<0 || index>=size)?MS_FALSE:MS_TRUE)
 
 #endif
 
@@ -1554,6 +1556,8 @@ struct layerVTable {
 
     int (*LayerCreateItems)(layerObj *layer, int nt);
     int (*LayerGetNumFeatures)(layerObj *layer);
+    char* (*LayerEscapeSQLParam)(layerObj *layer, const char* pszString);
+    char* (*LayerEscapePropertyName)(layerObj *layer, const char* pszString);
 };
 #endif /*SWIG*/
 
@@ -1817,6 +1821,10 @@ MS_DLL_EXPORT int strcasecmp(const char *s1, const char *s2);
 MS_DLL_EXPORT size_t strlcat(char *dst, const char *src, size_t siz);
 #endif /* NEED_STRLCAT */
 
+#ifdef NEED_STRLCPY
+MS_DLL_EXPORT size_t strlcpy(char *dst, const char *src, size_t siz);
+#endif /* NEED_STRLCPY */
+
 /* in mapsymbol.c */
 /* Use this function *only* with mapfile loading phase */
 MS_DLL_EXPORT int loadSymbolSet(symbolSetObj *symbolset, mapObj *map);
@@ -1952,6 +1960,9 @@ MS_DLL_EXPORT int msLayerApplyPlainFilterToLayer(FilterEncodingNode *psNode, map
 
 /* maplayer.c */
 MS_DLL_EXPORT int msLayerGetNumFeatures(layerObj *layer);
+
+MS_DLL_EXPORT char *msLayerEscapeSQLParam(layerObj *layer, const char* pszString);
+MS_DLL_EXPORT char *msLayerEscapePropertyName(layerObj *layer, const char* pszString);
 
 /* These are special because SWF is using these */
 int msOGRLayerNextShape(layerObj *layer, shapeObj *shape);

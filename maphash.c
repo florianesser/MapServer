@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: maphash.c 9376 2009-10-05 14:09:14Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implement hashTableObj class.
@@ -32,7 +32,7 @@
 #include "mapserver.h"
 #include "maphash.h"
 
-MS_CVSID("$Id: maphash.c 9376 2009-10-05 14:09:14Z aboudreault $")
+MS_CVSID("$Id$")
 
 static unsigned hash(const char *key)
 {

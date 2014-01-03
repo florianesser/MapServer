@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapgd.c 9667 2010-01-05 11:56:00Z tamas $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  GD rendering and other GD related functions.
@@ -40,7 +40,7 @@
 #include <io.h>
 #endif
 
-MS_CVSID("$Id: mapgd.c 9667 2010-01-05 11:56:00Z tamas $")
+MS_CVSID("$Id$")
 
 static unsigned char PNGsig[8] = {137, 80, 78, 71, 13, 10, 26, 10}; /* 89 50 4E 47 0D 0A 1A 0A hex */
 static unsigned char JPEGsig[3] = {255, 216, 255}; /* FF D8 FF hex */

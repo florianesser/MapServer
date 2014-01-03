@@ -1,5 +1,5 @@
 /* ===========================================================================
-   $Id: outputformat.i 5538 2006-07-03 17:29:05Z frank $
+   $Id$
  
    Project:  MapServer
    Purpose:  SWIG interface file for mapscript outputFormatObj extensions

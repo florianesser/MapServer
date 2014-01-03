@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapcopy.c 9395 2009-10-07 08:47:37Z tbonfort $
+ * $Id$
  *
  * Project: MapServer
  * Purpose: Functions to allow copying/cloning of maps
@@ -45,7 +45,7 @@
 #include "mapserver.h"
 #include "mapsymbol.h"
 
-MS_CVSID("$Id: mapcopy.c 9395 2009-10-07 08:47:37Z tbonfort $")
+MS_CVSID("$Id$")
 
 #include "mapcopy.h"
 

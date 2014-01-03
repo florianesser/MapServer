@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapzoom.i 9917 2010-03-05 14:57:43Z aboudreault $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Map zooming convenience methods for MapScript

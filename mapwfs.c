@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mapwfs.c 10191 2010-05-28 19:16:24Z assefa $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  WFS server implementation
@@ -28,7 +28,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: mapwfs.c 10191 2010-05-28 19:16:24Z assefa $")
+MS_CVSID("$Id$")
 
 #if defined(USE_WFS_SVR)
 

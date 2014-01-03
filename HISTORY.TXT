@@ -1,7 +1,7 @@
-MapServer Revision History
+MapServer Revsion History
 ==========================
 
-$Id: HISTORY.TXT 10874 2011-01-17 22:31:59Z dmorissette $
+$Id$
 
 This is a human-readable revision history which will attempt to document
 required changes for users to migrate from one version of MapServer to the
@@ -9,7 +9,65 @@ next.  Developers are strongly encouraged to document their changes and
 their impacts on the users here.  (Please add the most recent changes to 
 the top of the list.)
 
-For a complete change history, please see the Subversion log comments.
+For a complete change history, please see the Git log comments.
+
+Version 5.6.9 (2014-01-02):
+---------------------------
+
+- Fix potential SQL Injection with postgis TIME filters (#4834)
+
+Version 5.6.8 (2012-02-08):
+---------------------------
+
+- Fix security issue with quote escape in WFS GetFeature Filter (#4087)
+
+- Fix segfault on join with postgresql tables (#4074)
+
+- Define Z_BEST_COMPRESSION for newer libpng versions (#4033)
+
+- Fixes to support latest PROJ versions (#4008)
+
+Version 5.6.7 (2011-07-12):
+---------------------------
+
+IMPORTANT SECURITY FIXES:
+
+-  Fixes to prevent SQL injections through OGC filter encoding (in WMS, WFS 
+   and SOS), as well as a potential SQL injection in WMS time support. 
+   Your system may be vulnerable if it has MapServer with OGC protocols 
+   enabled, with layers connecting to an SQL RDBMS backend, either 
+   natively or via OGR (#3903)
+
+-  Fixed potentially exploitable buffer overflows in OGC Filter Encoding
+   support (#3903)
+
+Other Fixes:
+
+- Fixed PHP/MapScript ms_iogetstdoutbufferbytes() always returning 0 bytes 
+  written (#3041)
+
+- OGC Filter: fix segfault when a ows_varname_type or wfs_varname_type is
+  defined but not a gml_varname_type (#3902)
+
+- Fixed mssql2008 to return correct geometries with chart layer type (#3894)
+
+- Fix segfault with png-inimage exceptions and quantize_force=on (#2903)
+
+- Fix segfault on malformed <PropertyIsLike> filters (#3888)
+
+- Fixed potential crash with AVERAGE resampling and crazy reprojection (#3886)
+
+- Fixed segmentation fault on invalid symbol (#3849)
+
+- add support for gml:Box for spatial filters (#3789)
+
+- Fixed false computation of symbol size when used as a brush on line (#3760)
+
+- Fixed SQL Spatial to be able to use UniqueIdentifier field as unique key (#3722)
+
+- Fixed possible seg. fault when using "OGR:Label*" special attributes (#3667)
+
+- Fixed bug with newlines around multipart boundaries in wcs multipart (#3672)
 
 Version 5.6.6 (2011-01-17):
 ---------------------------

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: php_mapscript.h 9558 2009-11-20 18:11:50Z sdlime $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  PHP/MapScript extension for MapServer. Header file 

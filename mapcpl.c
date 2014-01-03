@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapcpl.c 7418 2008-02-29 00:02:49Z nsavard $ 
+ * $Id$ 
  *
  * Project:  MapServer
  * Purpose:  Functions copied from GDAL's CPL. This file contain utility 
@@ -36,12 +36,12 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-/* $Id: mapcpl.c 7418 2008-02-29 00:02:49Z nsavard $ */
+/* $Id$ */
 
 #include <assert.h>
 #include "mapserver.h"
 
-MS_CVSID("$Id: mapcpl.c 7418 2008-02-29 00:02:49Z nsavard $")
+MS_CVSID("$Id$")
 
 /* should be size of largest possible filename */
 #define MS_PATH_BUF_SIZE 2048

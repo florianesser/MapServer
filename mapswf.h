@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: mapswf.h 7505 2008-04-09 12:09:49Z tomkralidis $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Header files for Ming support (swf flash output) in Mapserver

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: shp2pdf.c 8489 2009-02-03 20:35:24Z tomkralidis $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Commandline shape to pdf converter.
@@ -29,7 +29,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: shp2pdf.c 8489 2009-02-03 20:35:24Z tomkralidis $")
+MS_CVSID("$Id$")
 
 #ifdef USE_PDF
 #include <pdflib.h>

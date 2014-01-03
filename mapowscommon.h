@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapowscommon.h 7804 2008-07-09 11:27:53Z tomkralidis $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  OGC OWS Common Implementation include file

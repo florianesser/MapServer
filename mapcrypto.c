@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapcrypto.c 7544 2008-04-29 18:16:05Z pramsey $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Encryption functions (see MS-RFC-18)
@@ -34,7 +34,7 @@
 
 #include "mapserver.h"
 
-MS_CVSID("$Id: mapcrypto.c 7544 2008-04-29 18:16:05Z pramsey $")
+MS_CVSID("$Id$")
 
 
 /**********************************************************************

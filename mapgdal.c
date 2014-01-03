@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapgdal.c 9258 2009-08-17 16:22:53Z warmerdam $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  Implementation of support for output using GDAL.
@@ -31,7 +31,7 @@
 #include "mapserver.h"
 #include "mapthread.h"
 
-MS_CVSID("$Id: mapgdal.c 9258 2009-08-17 16:22:53Z warmerdam $")
+MS_CVSID("$Id$")
 
 #ifdef USE_GDAL
 

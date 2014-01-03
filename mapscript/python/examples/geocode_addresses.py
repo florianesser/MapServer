@@ -5,7 +5,7 @@
 # Purpose: simple script to read a csv file, geocode the addresses
 # with the Google Maps API and write to a new shapefile
 #
-# $Id: geocode_addresses.py 7905 2008-09-10 21:40:23Z tomkralidis $
+# $Id$
 #
 
 import sys

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mapgml.c 9887 2010-02-23 19:30:57Z assefa $
+ * $Id$
  *
  * Project:  MapServer
  * Purpose:  shapeObj to GML output via MapServer queries.
@@ -31,7 +31,7 @@
 #include "maperror.h"
 #include "mapgml.h"
 
-MS_CVSID("$Id: mapgml.c 9887 2010-02-23 19:30:57Z assefa $")
+MS_CVSID("$Id$")
 
 /* Use only mapgml.c if WMS or WFS is available */
 
