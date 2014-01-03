@@ -1,7 +1,8 @@
-mapserver (5.6.5-2+squeeze1) stable-security; urgency=high
+mapserver (5.6.5-2+squeeze2) stable-security; urgency=high
 
-  * Fix possible SQL injection in WFS.
+  * Fix possible SQL injection in WFS (CVE-2011-2703).
     [http://trac.osgeo.org/mapserver/ticket/3874]
+  * Fix stack based buffer overflows (CVE-2011-2704).
 
  -- Alan Boudreault <aboudreault@mapgears.com>  Tue, 12 Jul 2011 00:23:32 -0400
 
