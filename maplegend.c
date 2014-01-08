@@ -156,12 +156,14 @@ int msDrawLegendIcon(mapObj *map, layerObj *lp, classObj *theclass,
         int lpos = label->position;
         int loffsetx = label->offsetx;
         int loffsety = label->offsety;
+        int lstatus = label->status;
 
         label->offsetx = 0;
         label->offsety = 0;
         label->angle = 0;
         label->position = MS_CC;
         if (label->type == MS_TRUETYPE) label->size = height;
+        label->status = MS_ON;
         msDrawLabel(map, image_draw, marker, (char*)"Az", label,1.0);
 
         label->size = lsize;
@@ -169,6 +171,7 @@ int msDrawLegendIcon(mapObj *map, layerObj *lp, classObj *theclass,
         label->angle = langle;
         label->offsetx = loffsetx;
         label->offsety = loffsety;
+        label->status = lstatus;
       }
       break;
     case MS_LAYER_POINT:
@@ -228,8 +231,16 @@ int msDrawLegendIcon(mapObj *map, layerObj *lp, classObj *theclass,
       zigzag.line[0].point[3].x = dstX + width - offset;
       zigzag.line[0].point[3].y = dstY + offset;
 
-      for(i=0; i<theclass->numstyles; i++)
-        msDrawLineSymbol(&map->symbolset, image_draw, &zigzag, theclass->styles[i], lp->scalefactor);
+      for(i=0; i<theclass->numstyles; i++) {
+        if (theclass->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_NONE ||
+            theclass->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOINT ||
+            theclass->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY)
+          msDrawLineSymbol(&map->symbolset, image_draw, &zigzag, theclass->styles[i], lp->scalefactor);
+          
+        else
+          msDrawTransformedShape(map, &map->symbolset, image_draw, &zigzag, 
+                                        theclass->styles[i], lp->scalefactor);
+      }
 
       free(zigzag.line[0].point);
       free(zigzag.line);
@@ -239,7 +250,13 @@ int msDrawLegendIcon(mapObj *map, layerObj *lp, classObj *theclass,
     case MS_LAYER_CHART:
     case MS_LAYER_POLYGON:
       for(i=0; i<theclass->numstyles; i++)
-        msDrawShadeSymbol(&map->symbolset, image_draw, &box, theclass->styles[i], lp->scalefactor);
+        if (theclass->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_NONE ||
+            theclass->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOINT ||
+            theclass->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY)
+          msDrawShadeSymbol(&map->symbolset, image_draw, &box, theclass->styles[i], lp->scalefactor);
+        else
+          msDrawTransformedShape(map, &map->symbolset, image_draw, &box,
+                                 theclass->styles[i], lp->scalefactor);
       break;
     default:
       return MS_FAILURE;

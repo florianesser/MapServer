@@ -32,11 +32,11 @@
 /*
 ** MapServer version - to be updated for every release
 */
-#define MS_VERSION "6.2.1"
+#define MS_VERSION "6.2.2"
 
 #define MS_VERSION_MAJOR    6
 #define MS_VERSION_MINOR    2
-#define MS_VERSION_REV      1
+#define MS_VERSION_REV      2
 
 #define MS_VERSION_NUM (MS_VERSION_MAJOR*10000+MS_VERSION_MINOR*100+MS_VERSION_REV)
 
@@ -2041,6 +2041,7 @@ extern "C" {
   MS_DLL_EXPORT int msLoadSymbolSet(symbolSetObj *symbolset, mapObj *map);
   MS_DLL_EXPORT int msCopySymbol(symbolObj *dst, symbolObj *src, mapObj *map);
   MS_DLL_EXPORT int msCopySymbolSet(symbolSetObj *dst, symbolSetObj *src, mapObj *map);
+  MS_DLL_EXPORT int msCopyHashTable(hashTableObj *dst, hashTableObj *src);
   MS_DLL_EXPORT void msInitSymbolSet(symbolSetObj *symbolset);
   MS_DLL_EXPORT symbolObj *msGrowSymbolSet( symbolSetObj *symbolset );
   MS_DLL_EXPORT int msAddImageSymbol(symbolSetObj *symbolset, char *filename);
