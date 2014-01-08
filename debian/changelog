@@ -1,3 +1,11 @@
+mapserver (5.6.5-2+squeeze3) squeeze-security; urgency=high
+
+  * Add patch to fix CVE-2013-7262, an SQL injection vulnerability in the
+    msPostGISLayerSetTimeFilter function in mappostgis.c.
+    (closes: #734565)
+
+ -- Bas Couwenberg <sebastic@xs4all.nl>  Wed, 08 Jan 2014 22:44:27 +0100
+
 mapserver (5.6.5-2+squeeze2) stable-security; urgency=high
 
   * Fix possible SQL injection in WFS (CVE-2011-2703).
