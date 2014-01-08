@@ -2,3 +2,4 @@ fixgeos
 php54
 multiarch-libgd
 contenttype
+cve-2013-7262
