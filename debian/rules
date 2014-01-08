@@ -155,6 +155,7 @@ clean-first-build:
 clean: unpatch clean-first-build
 	dh_testdir
 	dh_prep
+	-$(RM) debian/*.debhelper.log
 	-$(RM) configure-php5-stamp build-php5-stamp install-arch-stamp install-indep-stamp install-php5-stamp
 	[ ! -f Makefile ] || $(MAKE) distclean
 
