@@ -1,11 +1,11 @@
-mapserver (5.6.5-2+squeeze3) squeeze-security; urgency=high
+mapserver (5.6.5-2+squeeze3) oldstable-proposed-updates; urgency=low
 
   * Add patch to fix CVE-2013-7262, an SQL injection vulnerability in the
     msPostGISLayerSetTimeFilter function in mappostgis.c.
     (closes: #734565)
   * Remove debhelper log files to allow clean builds.
 
- -- Bas Couwenberg <sebastic@xs4all.nl>  Wed, 08 Jan 2014 22:44:27 +0100
+ -- Bas Couwenberg <sebastic@xs4all.nl>  Fri, 10 Jan 2014 04:21:27 +0100
 
 mapserver (5.6.5-2+squeeze2) stable-security; urgency=high
 
