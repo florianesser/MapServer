@@ -1,3 +1,20 @@
+mapserver (6.0.1-2ubuntu1.1) precise-security; urgency=low
+
+  * Add patch to fix CVE-2013-7262, an SQL injection vulnerability in the
+    msPostGISLayerSetTimeFilter function in mappostgis.c. (LP: #1267616)
+
+ -- Johan Van de Wauw <johan.vandewauw@gmail.com>  Sun, 12 Jan 2014 21:07:15 +0100
+
+mapserver (6.0.1-2ubuntu1) precise; urgency=low
+
+  * fix-jpeg-gd-detection.patch: Rework configure detection of jpeg and gd
+    headers and libraries from system locations. Fixes cases where it
+    would not build when libraries where in /usr/lib/<arch>-linux-gnu/
+  * debian/rules: Do not pass /usr to --with-XX= and let configure auto
+    detect based on system locations.
+
+ -- Ben Collins <bcollins@ubuntu.com>  Sat, 21 Jan 2012 04:17:27 +0000
+
 mapserver (6.0.1-2) unstable; urgency=low
 
   * Added missed stuff for libmapscript-perl.
@@ -5,7 +22,7 @@ mapserver (6.0.1-2) unstable; urgency=low
  -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 23 Dec 2011 14:02:06 +0100
 
 mapserver (6.0.1-1) unstable; urgency=low
-	
+
   [ Alan Boudreault ]
   * New upstream release.
 

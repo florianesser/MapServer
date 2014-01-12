@@ -29,12 +29,12 @@ COMMON_CONFIG=	--prefix=/usr \
 		--enable-debug \
 		--without-tiff \
 		--without-pdf \
-		--with-gd=/usr \
-		--with-freetype=/usr \
+		--with-gd \
+		--with-freetype \
 		--with-fribidi-config \
-		--with-zlib=/usr \
-		--with-xpm=/usr \
-		--with-jpeg=/usr \
+		--with-zlib \
+		--with-xpm \
+		--with-jpeg \
 		--with-gdal \
 		--with-ogr \
 		--with-proj \
