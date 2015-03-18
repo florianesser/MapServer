@@ -1,3 +1,27 @@
+mapserver (6.4.1-5build4) vivid; urgency=medium
+
+  * No-change rebuild for the libgdal-dev 1.11.2 transition.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Wed, 18 Mar 2015 01:05:51 -0600
+
+mapserver (6.4.1-5build3) vivid; urgency=medium
+
+  * No change rebuild against PHP 5.6 (phpapi-20131226).
+
+ -- Robie Basak <robie.basak@ubuntu.com>  Tue, 27 Jan 2015 15:55:33 +0000
+
+mapserver (6.4.1-5build2) vivid; urgency=medium
+
+  * Rebuild against current ruby-defaults, dropping support for Ruby 2.0.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 19 Nov 2014 14:24:56 +0000
+
+mapserver (6.4.1-5build1) utopic; urgency=medium
+
+  * Rebuild for Perl 5.20.0.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 21 Aug 2014 13:14:19 +0100
+
 mapserver (6.4.1-5) unstable; urgency=medium
 
   * Add debug package for libmapserver. Thanks to Frederic Junod for the patch.
