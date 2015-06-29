@@ -77,23 +77,39 @@ int msSLDApplySLDURL(mapObj *map, char *szURL, int iLayer,
     if (pszSLDTmpFile == NULL) {
       pszSLDTmpFile = msTmpFile(map, NULL, NULL, "sld.xml" );
     }
-    if (msHTTPGetFile(szURL, pszSLDTmpFile, &status,-1, 0, 0) ==  MS_SUCCESS) {
-      if ((fp = fopen(pszSLDTmpFile, "rb")) != NULL) {
-        int   nBufsize=0;
-        fseek(fp, 0, SEEK_END);
-        nBufsize = ftell(fp);
-        rewind(fp);
-        pszSLDbuf = (char*)malloc((nBufsize+1)*sizeof(char));
-        fread(pszSLDbuf, 1, nBufsize, fp);
-        fclose(fp);
-        pszSLDbuf[nBufsize] = '\0';
-        unlink(pszSLDTmpFile);
-      }
+    if (pszSLDTmpFile == NULL) {
+      msSetError(MS_WMSERR, "Could not determine temporary file %s. Please make sure that the temporary path is set. The temporary path can be defined for example by setting TMPPATH in the map file. Please check the MapServer documentation on temporary path settings.", "msSLDApplySLDURL()", pszSLDTmpFile);
     } else {
-      msSetError(MS_WMSERR, "Could not open SLD %s and save it in temporary file %s. Please make sure that the sld url is valid and that the temporary path is set. The temporary path can be defined for example by setting TMPPATH in the map file. Please check the MapServer documentation on temporary path settings.", "msSLDApplySLDURL", szURL, pszSLDTmpFile);
+      int nMaxRemoteSLDBytes;
+      const char *pszMaxRemoteSLDBytes = msOWSLookupMetadata(&(map->web.metadata), "MO", "remote_sld_max_bytes");
+      if(!pszMaxRemoteSLDBytes) {
+    	  nMaxRemoteSLDBytes = 1024*1024; /* 1 megaByte */
+      } else {
+    	  nMaxRemoteSLDBytes = atoi(pszMaxRemoteSLDBytes);
+      }
+      if (msHTTPGetFile(szURL, pszSLDTmpFile, &status,-1, 0, 0, nMaxRemoteSLDBytes) ==  MS_SUCCESS) {
+        if ((fp = fopen(pszSLDTmpFile, "rb")) != NULL) {
+          int   nBufsize=0;
+          fseek(fp, 0, SEEK_END);
+          nBufsize = ftell(fp);
+          if(nBufsize > 0) {
+            rewind(fp);
+            pszSLDbuf = (char*)malloc((nBufsize+1)*sizeof(char));
+            fread(pszSLDbuf, 1, nBufsize, fp);
+            pszSLDbuf[nBufsize] = '\0';
+          } else {
+            msSetError(MS_WMSERR, "Could not open SLD %s as it appears empty", "msSLDApplySLDURL", szURL);
+          }
+          fclose(fp);
+          unlink(pszSLDTmpFile);
+        }
+      } else {
+        unlink(pszSLDTmpFile);
+        msSetError(MS_WMSERR, "Could not open SLD %s and save it in a temporary file. Please make sure that the sld url is valid and that the temporary path is set. The temporary path can be defined for example by setting TMPPATH in the map file. Please check the MapServer documentation on temporary path settings.", "msSLDApplySLDURL", szURL);
+      }
+      if (pszSLDbuf)
+        nStatus = msSLDApplySLD(map, pszSLDbuf, iLayer, pszStyleLayerName, ppszLayerNames);
     }
-    if (pszSLDbuf)
-      nStatus = msSLDApplySLD(map, pszSLDbuf, iLayer, pszStyleLayerName, ppszLayerNames);
   }
 
   return nStatus;
@@ -161,11 +177,12 @@ int msSLDApplySLD(mapObj *map, char *psSLDXML, int iLayer,
       layerObj *psTmpLayer=NULL;
       int nIndex;
       char tmpId[128];
+      nIndex = msGetLayerIndex(map, pasLayers[m].name);
+      if(pasLayers[m].name == NULL) continue;
       for (l=0; l<nLayers; l++) {
-        if(pasLayers[m].name == NULL || pasLayers[l].name == NULL)
+        if(pasLayers[l].name == NULL)
           continue;
 
-        nIndex = msGetLayerIndex(map, pasLayers[m].name);
 
         if (m !=l && strcasecmp(pasLayers[m].name, pasLayers[l].name)== 0 &&
             nIndex != -1) {
@@ -189,9 +206,6 @@ int msSLDApplySLD(mapObj *map, char *psSLDXML, int iLayer,
         }
       }
     }
-  }
-
-  if (pasLayers && nLayers > 0) {
     for (i=0; i<map->numlayers; i++) {
       if (iLayer >=0 && iLayer< map->numlayers) {
         i = iLayer;
@@ -218,7 +232,8 @@ int msSLDApplySLD(mapObj *map, char *psSLDXML, int iLayer,
           pszSLDNotSupported = msOWSLookupMetadata(&(GET_LAYER(map, i)->metadata), "M", "SLD_NOT_SUPPORTED");
           if (pszSLDNotSupported) {
             msSetError(MS_WMSERR, "Layer %s does not support SLD", "msSLDApplySLD", pasLayers[j].name);
-            return MS_FAILURE;
+            nsStatus = MS_FAILURE;
+            goto sld_cleanup;
           }
 #endif
 
@@ -379,8 +394,9 @@ int msSLDApplySLD(mapObj *map, char *psSLDXML, int iLayer,
 
             pasLayers[j].layerinfo=NULL;
 
-            if( nStatus != MS_SUCCESS )
-              return nStatus;
+            if( nStatus != MS_SUCCESS ) {
+              goto sld_cleanup;
+            }
           } else {
             /*in some cases it would make sense to concatenate all the class
               expressions and use it to set the filter on the layer. This
@@ -461,10 +477,15 @@ int msSLDApplySLD(mapObj *map, char *psSLDXML, int iLayer,
       *ppszLayerNames = pszTmp;
 
     }
-    for (i=0; i<nLayers; i++)
-      freeLayer(&pasLayers[i]);
-    msFree(pasLayers);
   }
+  
+  nStatus = MS_SUCCESS;
+
+sld_cleanup:
+  for (i=0; i<nLayers; i++)
+     freeLayer(&pasLayers[i]);
+  msFree(pasLayers);
+
   if(map->debug == MS_DEBUGLEVEL_VVV) {
     tmpfilename = msTmpFile(map, map->mappath, NULL, "_sld.map");
     if (tmpfilename == NULL) {
@@ -476,7 +497,7 @@ int msSLDApplySLD(mapObj *map, char *psSLDXML, int iLayer,
       msFree(tmpfilename);
     }
   }
-  return MS_SUCCESS;
+  return nStatus;
 
 
 #else
@@ -613,20 +634,20 @@ layerObj  *msSLDParseSLD(mapObj *map, char *psSLDXML, int *pnLayers)
 }
 
 
-int _msSLDParseSizeParameter(CPLXMLNode *psSize)
+double _msSLDParseSizeParameter(CPLXMLNode *psSize)
 {
-  int nSize = 0;
+  double dSize = 0;
   CPLXMLNode *psLiteral = NULL;
 
   if (psSize) {
     psLiteral = CPLGetXMLNode(psSize, "Literal");
     if (psLiteral && psLiteral->psChild && psLiteral->psChild->pszValue)
-      nSize = atof(psLiteral->psChild->pszValue);
+      dSize = atof(psLiteral->psChild->pszValue);
     else if (psSize->psChild && psSize->psChild->pszValue)
-      nSize = atof(psSize->psChild->pszValue);
+      dSize = atof(psSize->psChild->pszValue);
   }
 
-  return nSize;
+  return dSize;
 }
 
 /************************************************************************/
@@ -1115,7 +1136,7 @@ int msSLDParseLineSymbolizer(CPLXMLNode *psRoot, layerObj *psLayer,
     psOffset = CPLGetXMLNode(psRoot, "PerpendicularOffset");
     if (psOffset && psOffset->psChild && psOffset->psChild->pszValue) {
       psLayer->class[nClassId]->styles[iStyle]->offsetx = atoi(psOffset->psChild->pszValue);
-      psLayer->class[nClassId]->styles[iStyle]->offsety = psLayer->class[nClassId]->styles[iStyle]->offsetx;
+      psLayer->class[nClassId]->styles[iStyle]->offsety = MS_STYLE_SINGLE_SIDED_OFFSET;
     }
   }
 
@@ -1194,6 +1215,7 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
           int nDash = 0, i;
           char **aszValues = NULL;
           int nMaxDash;
+          if(pszDashValue) free(pszDashValue); /* free previous if multiple stroke-dasharray attributes were found */
           pszDashValue =
             msStrdup(psCssParam->psChild->psNext->pszValue);
           aszValues = msStringSplit(pszDashValue, ' ', &nDash);
@@ -1206,10 +1228,9 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
             for (i=0; i<nMaxDash; i++)
               psStyle->pattern[i] = atof(aszValues[i]);
 
-            msFreeCharArray(aszValues, nDash);
             psStyle->linecap = MS_CJC_BUTT;
           }
-
+          msFreeCharArray(aszValues, nDash);
         }
       } else if (strcasecmp(psStrkName, "stroke-opacity") == 0) {
         if(psCssParam->psChild &&  psCssParam->psChild->psNext &&
@@ -1234,10 +1255,10 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
   /* then again the fill parameter can be used inside both elements. */
   psGraphicFill =  CPLGetXMLNode(psStroke, "GraphicFill");
   if (psGraphicFill)
-    msSLDParseGraphicFillOrStroke(psGraphicFill, pszDashValue, psStyle, map, 0);
+    msSLDParseGraphicFillOrStroke(psGraphicFill, pszDashValue, psStyle, map);
   psGraphicFill =  CPLGetXMLNode(psStroke, "GraphicStroke");
   if (psGraphicFill)
-    msSLDParseGraphicFillOrStroke(psGraphicFill, pszDashValue, psStyle, map, 0);
+    msSLDParseGraphicFillOrStroke(psGraphicFill, pszDashValue, psStyle, map);
 
   if (pszDashValue)
     free(pszDashValue);
@@ -1473,10 +1494,10 @@ int msSLDParsePolygonFill(CPLXMLNode *psFill, styleObj *psStyle,
   /* then again the fill parameter can be used inside both elements. */
   psGraphicFill =  CPLGetXMLNode(psFill, "GraphicFill");
   if (psGraphicFill)
-    msSLDParseGraphicFillOrStroke(psGraphicFill, NULL, psStyle, map, 0);
+    msSLDParseGraphicFillOrStroke(psGraphicFill, NULL, psStyle, map);
   psGraphicFill =  CPLGetXMLNode(psFill, "GraphicStroke");
   if (psGraphicFill)
-    msSLDParseGraphicFillOrStroke(psGraphicFill, NULL, psStyle, map, 0);
+    msSLDParseGraphicFillOrStroke(psGraphicFill, NULL, psStyle, map);
 
 
   return MS_SUCCESS;
@@ -1491,8 +1512,7 @@ int msSLDParsePolygonFill(CPLXMLNode *psFill, styleObj *psStyle,
 /************************************************************************/
 int msSLDParseGraphicFillOrStroke(CPLXMLNode *psRoot,
                                   char *pszDashValue,
-                                  styleObj *psStyle, mapObj *map,
-                                  int bPointLayer)
+                                  styleObj *psStyle, mapObj *map)
 {
   CPLXMLNode  *psCssParam, *psGraphic, *psExternalGraphic, *psMark, *psSize;
   CPLXMLNode *psWellKnownName, *psStroke, *psFill;
@@ -1504,8 +1524,6 @@ int msSLDParseGraphicFillOrStroke(CPLXMLNode *psRoot,
   int bFilled = 0;
   CPLXMLNode *psPropertyName=NULL;
   char szTmp[256];
-
-  bPointLayer=0;
 
   if (!psRoot || !psStyle || !map)
     return MS_FAILURE;
@@ -2046,7 +2064,7 @@ int msSLDParsePointSymbolizer(CPLXMLNode *psRoot, layerObj *psLayer,
 
   msSLDParseGraphicFillOrStroke(psRoot, NULL,
                                 psLayer->class[nClassId]->styles[iStyle],
-                                psLayer->map, 1);
+                                psLayer->map);
 
   return MS_SUCCESS;
 }
@@ -2543,7 +2561,7 @@ int msSLDParseRasterSymbolizer(CPLXMLNode *psRoot, layerObj *psLayer)
         psNode = psNode->psNext;
       }
 
-      if (nValues == nThresholds+1) {
+      if (nThresholds > 0 && nValues == nThresholds+1) {
         /*free existing classes*/
         for(i=0; i<psLayer->numclasses; i++) {
           if (psLayer->class[i] != NULL) {
@@ -3017,7 +3035,7 @@ int ParseTextLinePlacement(CPLXMLNode *psRoot, classObj *psClass)
   psOffset = CPLGetXMLNode(psRoot, "PerpendicularOffset");
   if (psOffset && psOffset->psChild && psOffset->psChild->pszValue) {
     psLabelObj->offsetx = atoi(psOffset->psChild->pszValue);
-    psLabelObj->offsety = atoi(psOffset->psChild->pszValue);
+    psLabelObj->offsety = MS_LABEL_PERPENDICULAR_OFFSET;
 
     /*if there is a PerpendicularOffset, we will assume that the
       best setting for mapserver would be to use angle=0 and the
@@ -3026,6 +3044,7 @@ int ParseTextLinePlacement(CPLXMLNode *psRoot, classObj *psClass)
        set the angles if the parameter is not set*/
     if (!psAligned) {
       psLabelObj->anglemode = MS_NONE;
+      psLabelObj->offsety = psLabelObj->offsetx;
     }
   }
 
@@ -3590,6 +3609,7 @@ char *msSLDGenerateLineSLD(styleObj *psStyle, layerObj *psLayer, int nVersion)
              "<%s name=\"stroke-dasharray\">%s</%s>\n",
              sCssParam, pszDashArray, sCssParam);
     pszSLD = msStringConcatenate(pszSLD, szTmp);
+    msFree(pszDashArray);
   }
 
   snprintf(szTmp, sizeof(szTmp), "</%sStroke>\n",  sNameSpace);
@@ -3867,9 +3887,8 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
         }
         snprintf(szTmp, sizeof(szTmp), "</%sFont>\n",  sNameSpace);
         pszSLD = msStringConcatenate(pszSLD, szTmp);
-
-        msFreeCharArray(aszFontsParts, nFontParts);
       }
+      msFreeCharArray(aszFontsParts, nFontParts);
     }
 
 
@@ -4396,8 +4415,10 @@ char *msSLDGetLeftExpressionOfOperator(char *pszExpression)
       }
       pszReturn[iReturn] = '\0';
     }
-  } else
+  } else {
+    msFree(pszReturn);
     return NULL;
+  }
 
   return pszReturn;
 }
@@ -4537,7 +4558,6 @@ char *msSLDGetAttributeNameOrValue(char *pszExpression,
     if (nTokens > 1) {
       pszAttributeName = msStrdup(aszValues[0]);
       pszAttributeValue =  msStrdup(aszValues[1]);
-      msFreeCharArray(aszValues, nTokens);
     } else {
       nLength = strlen(pszExpression);
       pszAttributeName = (char *)malloc(sizeof(char)*(nLength+1));
@@ -4558,9 +4578,8 @@ char *msSLDGetAttributeNameOrValue(char *pszExpression,
         }
         pszAttributeName[iValue] = '\0';
       }
-
-
     }
+    msFreeCharArray(aszValues, nTokens);
   } else if (bOneCharCompare == 0) {
     nLength = strlen(pszExpression);
     pszAttributeName = (char *)malloc(sizeof(char)*(nLength+1));
@@ -4594,8 +4613,10 @@ char *msSLDGetAttributeNameOrValue(char *pszExpression,
   /*      inside []                                                       */
   /* -------------------------------------------------------------------- */
   if (bReturnName) {
-    if (!pszAttributeName)
+    if (!pszAttributeName) {
+      msFree(pszAttributeValue);
       return NULL;
+    }
 
     nLength = strlen(pszAttributeName);
     pszFinalAttributeName = (char *)malloc(sizeof(char)*(nLength+1));
@@ -4617,13 +4638,18 @@ char *msSLDGetAttributeNameOrValue(char *pszExpression,
       pszFinalAttributeName[iAtt] = '\0';
     }
 
+    msFree(pszAttributeName);
+    msFree(pszAttributeValue);
     return pszFinalAttributeName;
   } else {
 
-    if (!pszAttributeValue)
+    if (!pszAttributeValue) {
+      msFree(pszAttributeName);
       return NULL;
+    }
     nLength = strlen(pszAttributeValue);
     pszFinalAttributeValue = (char *)malloc(sizeof(char)*(nLength+1));
+    pszFinalAttributeValue[0] = '\0';
     bStartCopy= 0;
     iAtt = 0;
     for (i=0; i<nLength; i++) {
@@ -4654,8 +4680,7 @@ char *msSLDGetAttributeNameOrValue(char *pszExpression,
     }
 
     /*trim  for regular expressions*/
-    if (pszFinalAttributeValue && strlen(pszFinalAttributeValue) > 2 &&
-        strcasecmp(pszComparionValue, "PropertyIsLike") == 0) {
+    if (strlen(pszFinalAttributeValue) > 2 && strcasecmp(pszComparionValue, "PropertyIsLike") == 0) {
       int len = strlen(pszFinalAttributeValue);
       msStringTrimBlanks(pszFinalAttributeValue);
       if (pszFinalAttributeValue[0] == '/' &&
@@ -4674,6 +4699,8 @@ char *msSLDGetAttributeNameOrValue(char *pszExpression,
         pszFinalAttributeValue = msReplaceSubstring(pszFinalAttributeValue, ".*", "*");
       }
     }
+    msFree(pszAttributeName);
+    msFree(pszAttributeValue);
     return pszFinalAttributeValue;
   }
 }
@@ -4839,8 +4866,10 @@ FilterEncodingNode *BuildExpressionTree(char *pszExpression,
     }
 
     return psNode;
-  } else
+  } else {
+    msFree(pszFinalExpression);
     return NULL;
+  }
 }
 
 char *msSLDBuildFilterEncoding(FilterEncodingNode *psNode)
@@ -5000,10 +5029,12 @@ char *msSLDParseExpression(char *pszExpression)
       if (strlen(szFinalAtt) > 0 && strlen(szFinalValue) >0) {
         snprintf(szBuffer, sizeof(szBuffer), "<ogc:Filter><ogc:PropertyIsEqualTo><ogc:PropertyName>%s</ogc:PropertyName><ogc:Literal>%s</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>",
                  szFinalAtt, szFinalValue);
+        msFree(pszFilter); /*FIXME: we are possibly discarding a previously set pszFilter */
         pszFilter = msStrdup(szBuffer);
       }
     }
   }
+  msFreeCharArray(aszElements, nElements);
 
   return pszFilter;
 }

@@ -1,0 +1,25 @@
+Index: mapserver/maplayer.c
+===================================================================
+--- mapserver.orig/maplayer.c	2013-06-17 14:37:03.912065096 -0400
++++ mapserver/maplayer.c	2013-08-21 15:26:01.513595914 -0400
+@@ -1473,7 +1473,7 @@
+       return(msRASTERLayerInitializeVirtualTable(layer));
+       break;
+     case(MS_ORACLESPATIAL):
+-      return(msOracleSpatialLayerInitializeVirtualTable(layer));
++      msSetError(MS_MISCERR, "You choose oraclespatial. Please use the plugin CONNECTIONTYPE with libmsplugin-oracle.", "msInitializeVirtualTable()");
+       break;
+     case(MS_WFS):
+       return(msWFSLayerInitializeVirtualTable(layer));
+Index: mapserver/mapserver.h
+===================================================================
+--- mapserver.orig/mapserver.h	2013-08-21 15:27:01.725595237 -0400
++++ mapserver/mapserver.h	2013-08-21 15:27:11.777595124 -0400
+@@ -2226,7 +2226,6 @@
+   MS_DLL_EXPORT int msSDELayerInitializeVirtualTable(layerObj *layer);
+   MS_DLL_EXPORT int msOGRLayerInitializeVirtualTable(layerObj *layer);
+   MS_DLL_EXPORT int msPostGISLayerInitializeVirtualTable(layerObj *layer);
+-  MS_DLL_EXPORT int msOracleSpatialLayerInitializeVirtualTable(layerObj *layer);
+   MS_DLL_EXPORT int msWFSLayerInitializeVirtualTable(layerObj *layer);
+   MS_DLL_EXPORT int msGraticuleLayerInitializeVirtualTable(layerObj *layer);
+   MS_DLL_EXPORT int msRASTERLayerInitializeVirtualTable(layerObj *layer);

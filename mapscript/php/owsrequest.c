@@ -32,6 +32,9 @@
 #include "php_mapscript.h"
 #include "SAPI.h"
 #include "php_variables.h"
+#if PHP_VERSION_ID >= 50600
+#include "php_streams.h"
+#endif
 
 char *owsrequest_getenv(const char *name, void *thread_context);
 
@@ -97,7 +100,7 @@ PHP_METHOD(OWSRequestObj, __construct)
 PHP_METHOD(OWSRequestObj, __get)
 {
   char *property;
-  long property_len;
+  long property_len = 0;
   zval *zobj = getThis();
   php_owsrequest_object *php_owsrequest;
 
@@ -125,7 +128,7 @@ PHP_METHOD(OWSRequestObj, __get)
 PHP_METHOD(OWSRequestObj, __set)
 {
   char *property;
-  long property_len;
+  long property_len = 0;
   zval *value;
   zval *zobj = getThis();
   php_owsrequest_object *php_owsrequest;
@@ -193,9 +196,29 @@ PHP_METHOD(OWSRequestObj, loadParams)
         cgirequestObj_loadParams(php_owsrequest->cgirequest, owsrequest_getenv, NULL, 0, thread_context);
       }
     } else {
+#if PHP_VERSION_ID >= 50600
+      php_stream *s = php_stream_temp_new();
+      php_stream *input = php_stream_open_wrapper("php://input", "r", 0, NULL);
+
+      /* php://input does not support stat */
+      php_stream_copy_to_stream_ex(input, s, -1, NULL);
+      php_stream_close(input);
+
+      php_stream_rewind(s);
+      
+      char *raw_post_data = NULL;
+      long raw_post_data_length = 0;
+
+      raw_post_data_length = php_stream_copy_to_mem(s, raw_post_data, -1, 0);
+
+      cgirequestObj_loadParams(php_owsrequest->cgirequest, owsrequest_getenv,
+                               raw_post_data,
+                               raw_post_data_length, thread_context);
+#else
       cgirequestObj_loadParams(php_owsrequest->cgirequest, owsrequest_getenv,
                                SG(request_info).raw_post_data,
                                SG(request_info).raw_post_data_length, thread_context);
+#endif
     }
   }
 
@@ -208,9 +231,9 @@ PHP_METHOD(OWSRequestObj, loadParams)
 PHP_METHOD(OWSRequestObj, setParameter)
 {
   char *name;
-  long name_len;
+  long name_len = 0;
   char *value;
-  long value_len;
+  long value_len = 0;
   zval *zobj = getThis();
   php_owsrequest_object *php_owsrequest;
 
@@ -235,9 +258,9 @@ PHP_METHOD(OWSRequestObj, setParameter)
 PHP_METHOD(OWSRequestObj, addParameter)
 {
   char *name;
-  long name_len;
+  long name_len = 0;
   char *value;
-  long value_len;
+  long value_len = 0;
   zval *zobj = getThis();
   php_owsrequest_object *php_owsrequest;
 
@@ -316,7 +339,7 @@ PHP_METHOD(OWSRequestObj, getValue)
 PHP_METHOD(OWSRequestObj, getValueByName)
 {
   char *name;
-  long name_len;
+  long name_len = 0;
   zval *zobj = getThis();
   char *value = NULL;
   php_owsrequest_object *php_owsrequest;

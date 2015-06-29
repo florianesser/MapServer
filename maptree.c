@@ -126,6 +126,10 @@ SHPTreeHandle msSHPDiskTreeOpen(const char * pszTree, int debug)
   pszFullname = (char *) msSmallMalloc(strlen(pszBasename) + 5);
   sprintf( pszFullname, "%s%s", pszBasename, MS_INDEX_EXTENSION);
   psTree->fp = fopen(pszFullname, "rb" );
+  if( psTree->fp == NULL ) {
+      sprintf( pszFullname, "%s.QIX", pszBasename);
+      psTree->fp = fopen(pszFullname, "rb" );
+  }
 
   msFree(pszBasename); /* don't need these any more */
   msFree(pszFullname);
@@ -749,6 +753,7 @@ int msWriteTree(treeObj *tree, char *filename, int B_order)
   i = fwrite( pabyBuf, 8, 1, disktree->fp );
   if( !i ) {
     fprintf (stderr, "unable to write to index file ... exiting \n");
+    msSHPDiskTreeClose( disktree );
     return (MS_FALSE);
   }
 

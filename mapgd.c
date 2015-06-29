@@ -26,9 +26,10 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
-#include "mapserver.h"
+#include "mapserver-config.h"
 #ifdef USE_GD
 
+#include "mapserver.h"
 #include "mapthread.h"
 #include <time.h>
 #include <gdfonts.h>
@@ -44,20 +45,24 @@
 
 int msGDSetup()
 {
+#ifdef USE_GD_FREETYPE
   if (gdFontCacheSetup() != 0) {
     return MS_FAILURE;
   }
+#endif
   return MS_SUCCESS;
 }
 
 void msGDCleanup(int signal)
 {
+#ifdef USE_GD_FREETYPE
   if(!signal) {
     /* there's a potential deadlock if we're killed by a signal and the font
      cache is already locked. We don't tear down the fontcache in this case
      to avoid it (issue 4093)*/
     gdFontCacheShutdown();
   }
+#endif
 }
 
 #define MS_IMAGE_GET_GDIMAGEPTR(image) ((gdImagePtr) image->img.plugin)
@@ -436,6 +441,7 @@ int renderGlyphsLineGD(imageObj *img, labelPathObj *labelpath, labelStyleObj *st
 
 int renderGlyphsGD(imageObj *img, double x, double y, labelStyleObj *style, char *text)
 {
+#ifdef USE_GD_FREETYPE
   gdImagePtr ip;
   char *error=NULL;
   int bbox[8];
@@ -463,7 +469,7 @@ int renderGlyphsGD(imageObj *img, double x, double y, labelStyleObj *style, char
   if(style->outlinewidth > 0) { /* handle the outline color */
     error = gdImageStringFT(ip, bbox, oc, style->fonts[0], style->size, style->rotation, x, y-1, text);
     if(error) {
-      msSetError(MS_TTFERR, error, "msDrawTextGD()");
+      msSetError(MS_TTFERR, "%s", "msDrawTextGD()", error);
       return(MS_FAILURE);
     }
 
@@ -479,6 +485,10 @@ int renderGlyphsGD(imageObj *img, double x, double y, labelStyleObj *style, char
   if(style->color)
     gdImageStringFT(ip, bbox, c, style->fonts[0], style->size, style->rotation, x, y, text);
   return MS_SUCCESS;
+#else
+  msSetError(MS_TTFERR, "Freetype support not enabled in this GD build", "renderGlyphsGD()");
+  return MS_FAILURE;
+#endif
 }
 
 int renderEllipseSymbolGD(imageObj *img, double x, double y, symbolObj *symbol, symbolStyleObj *style)
@@ -572,7 +582,7 @@ symbolObj* rotateVectorSymbolPoints(symbolObj *symbol, double angle_rad)
   /* center at 0,0 and rotate; then move back */
   for( i=0; i < symbol->numpoints; i++) {
     /* don't rotate PENUP commands (TODO: should use a constant here) */
-    if ((symbol->points[i].x == -99.0) && (symbol->points[i].x == -99.0) ) {
+    if ((symbol->points[i].x == -99.0) && (symbol->points[i].y == -99.0) ) {
       newSymbol->points[i].x = -99.0;
       newSymbol->points[i].y = -99.0;
       continue;
@@ -588,7 +598,7 @@ symbolObj* rotateVectorSymbolPoints(symbolObj *symbol, double angle_rad)
     xcor = minx*-1.0; /* symbols always start at 0,0 so get the shift vector */
     ycor = miny*-1.0;
     for( i=0; i < newSymbol->numpoints; i++) {
-      if ((newSymbol->points[i].x == -99.0) && (newSymbol->points[i].x == -99.0))
+      if ((newSymbol->points[i].x == -99.0) && (newSymbol->points[i].y == -99.0))
         continue;
       newSymbol->points[i].x = newSymbol->points[i].x + xcor;
       newSymbol->points[i].y = newSymbol->points[i].y + ycor;
@@ -641,7 +651,7 @@ int renderVectorSymbolGD(imageObj *img, double x, double y, symbolObj *symbol, s
 
     k = 0; /* point counter */
     for(j=0; j < symbol->numpoints; j++) {
-      if((symbol->points[j].x == -99) && (symbol->points[j].x == -99)) { /* new polygon (PENUP) */
+      if((symbol->points[j].x == -99) && (symbol->points[j].y == -99)) { /* new polygon (PENUP) */
         if(k>2) {
           if(fc >= 0)
             gdImageFilledPolygon(ip, mPoints, k, fc);
@@ -671,7 +681,7 @@ int renderVectorSymbolGD(imageObj *img, double x, double y, symbolObj *symbol, s
     gdImageSetThickness(ip, style->outlinewidth);
 
     for(j=1; j < symbol->numpoints; j++) { /* step through the marker */
-      if((symbol->points[j].x != -99) || (symbol->points[j].x != -99)) {
+      if((symbol->points[j].x != -99) || (symbol->points[j].y != -99)) {
         if((symbol->points[j-1].x == -99) && (symbol->points[j-1].y == -99)) { /* Last point was PENUP, now a new beginning */
           oldpnt.x = MS_NINT(style->scale*symbol->points[j].x + x);
           oldpnt.y = MS_NINT(style->scale*symbol->points[j].y + y);
@@ -696,6 +706,7 @@ int renderVectorSymbolGD(imageObj *img, double x, double y, symbolObj *symbol, s
 
 int renderTruetypeSymbolGD(imageObj *img, double x, double y, symbolObj *symbol, symbolStyleObj *s)
 {
+#ifdef USE_GD_FREETYPE
   int bbox[8];
   char *error;
   int c,oc = 0;
@@ -721,7 +732,7 @@ int renderTruetypeSymbolGD(imageObj *img, double x, double y, symbolObj *symbol,
   if( s->outlinecolor ) {
     error = gdImageStringFT(ip, bbox, oc, symbol->full_font_path, s->scale, s->rotation, x, y-1, symbol->character);
     if(error) {
-      msSetError(MS_TTFERR, error, "msDrawMarkerSymbolGD()");
+      msSetError(MS_TTFERR, "%s", "renderTruetypeSymbolGD()", error);
       return MS_FAILURE;
     }
 
@@ -736,6 +747,10 @@ int renderTruetypeSymbolGD(imageObj *img, double x, double y, symbolObj *symbol,
   if(s->color)
     gdImageStringFT(ip, bbox, c, symbol->full_font_path, s->scale, s->rotation, x, y, symbol->character);
   return MS_SUCCESS;
+#else
+  msSetError(MS_TTFERR, "Freetype support not enabled in this GD build", "renderTruetypeSymbolGD()");
+  return MS_FAILURE;
+#endif
 }
 
 gdImagePtr rotatePixmapGD(gdImagePtr img, double angle_rad)
@@ -898,6 +913,7 @@ int mergeRasterBufferGD(imageObj *dest, rasterBufferObj *overlay, double opacity
 
 int getTruetypeTextBBoxGD(rendererVTableObj *renderer, char **fonts, int numfonts, double size, char *string, rectObj *rect, double **advances, int bAdjustBaseline)
 {
+#ifdef USE_GD_FREETYPE
   int bbox[8];
   char *error;
   if(advances) {
@@ -907,7 +923,7 @@ int getTruetypeTextBBoxGD(rendererVTableObj *renderer, char **fonts, int numfont
     strex.flags = gdFTEX_XSHOW;
     error = gdImageStringFTEx(NULL, bbox, 0, fonts[0], size, 0, 0, 0, string, &strex);
     if(error) {
-      msSetError(MS_TTFERR, error, "gdImageStringFTEx()");
+      msSetError(MS_TTFERR, "%s", "gdImageStringFTEx()", error);
       return(MS_FAILURE);
     }
 
@@ -934,7 +950,7 @@ int getTruetypeTextBBoxGD(rendererVTableObj *renderer, char **fonts, int numfont
   } else {
     error = gdImageStringFT(NULL, bbox, 0, fonts[0], size, 0, 0, 0, string);
     if(error) {
-      msSetError(MS_TTFERR, error, "msGetTruetypeTextBBox()");
+      msSetError(MS_TTFERR, "%s", "msGetTruetypeTextBBoxGD()", error);
       return(MS_FAILURE);
     }
 
@@ -944,6 +960,10 @@ int getTruetypeTextBBoxGD(rendererVTableObj *renderer, char **fonts, int numfont
     rect->maxy = bbox[1];
     return MS_SUCCESS;
   }
+#else
+  msSetError(MS_TTFERR, "Freetype support not enabled in this GD build", "getTruetypeTextBBoxGD()");
+  return MS_FAILURE;
+#endif
 }
 
 int renderBitmapGlyphsGD(imageObj *img, double x, double y, labelStyleObj *style, char *text)
@@ -990,7 +1010,7 @@ int renderBitmapGlyphsGD(imageObj *img, double x, double y, labelStyleObj *style
   }
 
 
-  if(*lines != text)
+  if(lines != &text)
     msFreeCharArray(lines, numlines);
   return MS_SUCCESS;
 }
@@ -1003,11 +1023,9 @@ int freeSymbolGD(symbolObj *s)
 {
   return MS_SUCCESS;
 }
-#endif
 
 int msPopulateRendererVTableGD( rendererVTableObj *renderer )
 {
-#ifdef USE_GD
   int i;
   renderer->use_imagecache=0;
   renderer->supports_pixel_buffer=1;
@@ -1047,9 +1065,6 @@ int msPopulateRendererVTableGD( rendererVTableObj *renderer )
   renderer->renderPolygonTiled = &renderPolygonTiledGD;
   renderer->freeSymbol = &freeSymbolGD;
   return MS_SUCCESS;
-#else
-  msSetError(MS_MISCERR,"GD renderer requested but it is not configured in this build","msPopulateRendererVtableGD()");
-  return MS_FAILURE;
-#endif
 }
 
+#endif

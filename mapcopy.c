@@ -271,7 +271,6 @@ int msCopyLeader(labelLeaderObj *dst, labelLeaderObj *src)
       if( freeStyle(dst->styles[i]) == MS_SUCCESS ) msFree(dst->styles[i]);
     }
   }
-  msFree(dst->styles);
   dst->numstyles = 0;
 
   for (i = 0; i < src->numstyles; i++) {
@@ -366,7 +365,6 @@ int msCopyLabel(labelObj *dst, labelObj *src)
       if( freeStyle(dst->styles[i]) == MS_SUCCESS ) msFree(dst->styles[i]);
     }
   }
-  msFree(dst->styles);
   dst->numstyles = 0;
 
   for (i = 0; i < src->numstyles; i++) {
@@ -524,7 +522,6 @@ int msCopyClass(classObj *dst, classObj *src, layerObj *layer)
       }
     }
   }
-  msFree(dst->styles);
   dst->numstyles = 0;
 
   for (i = 0; i < src->numstyles; i++) {
@@ -852,6 +849,24 @@ int msCopyLegend(legendObj *dst, legendObj *src, mapObj *map)
   return MS_SUCCESS;
 }
 
+int msCopyScaleTokenEntry(scaleTokenEntryObj *src, scaleTokenEntryObj *dst) {
+  MS_COPYSTRING(dst->value,src->value);
+  MS_COPYSTELEM(minscale);
+  MS_COPYSTELEM(maxscale);
+  return MS_SUCCESS;
+}
+
+int msCopyScaleToken(scaleTokenObj *src, scaleTokenObj *dst) {
+  int i;
+  MS_COPYSTRING(dst->name,src->name);
+  MS_COPYSTELEM(n_entries);
+  dst->tokens = (scaleTokenEntryObj*)msSmallCalloc(src->n_entries,sizeof(scaleTokenEntryObj));
+  for(i=0;i<src->n_entries;i++) {
+    msCopyScaleTokenEntry(&src->tokens[i],&dst->tokens[i]);
+  }
+  return MS_SUCCESS;
+}
+
 /***********************************************************************
  * msCopyLayer()                                                       *
  *                                                                     *
@@ -871,6 +886,14 @@ int msCopyLayer(layerObj *dst, layerObj *src)
   MS_COPYSTRING(dst->classitem, src->classitem);
 
   MS_COPYSTELEM(classitemindex);
+
+  for(i = 0; i < src->numscaletokens; i++) {
+    if(msGrowLayerScaletokens(dst) == NULL)
+      return MS_FAILURE;
+    initScaleToken(&dst->scaletokens[i]);
+    msCopyScaleToken(&src->scaletokens[i],&dst->scaletokens[i]);
+    dst->numscaletokens++;
+  }
 
   for (i = 0; i < src->numclasses; i++) {
     if (msGrowLayerClasses(dst) == NULL)
@@ -929,6 +952,8 @@ int msCopyLayer(layerObj *dst, layerObj *src)
 
   MS_COPYSTRING(dst->tileitem, src->tileitem);
   MS_COPYSTELEM(tileitemindex);
+
+  MS_COPYSTRING(dst->tilesrs, src->tilesrs);
 
   MS_COPYSTRING(dst->tileindex, src->tileindex);
 

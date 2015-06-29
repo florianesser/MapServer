@@ -741,17 +741,21 @@ int readPNG(char *path, rasterBufferObj *rb)
 
   /* could pass pointers to user-defined error handlers instead of NULLs: */
   png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-  if (!png_ptr)
+  if (!png_ptr) {
+    fclose(stream);
     return MS_FAILURE;   /* out of memory */
+  }
 
   info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
     png_destroy_read_struct(&png_ptr, NULL, NULL);
+    fclose(stream);
     return MS_FAILURE;   /* out of memory */
   }
 
   if(setjmp(png_jmpbuf(png_ptr))) {
     png_destroy_read_struct(&png_ptr,&info_ptr,NULL);
+    fclose(stream);
     return MS_FAILURE;
   }
 
@@ -993,12 +997,19 @@ int msSaveRasterBufferToBuffer(rasterBufferObj *data, bufferObj *buffer,
     return MS_FAILURE;
   }
 }
+
 #ifdef USE_GIF
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+static char const *gif_error_msg(int code)
+#else
 static char const *gif_error_msg()
+#endif
 {
   static char msg[80];
 
+#if (!defined GIFLIB_MAJOR) || (GIFLIB_MAJOR < 5)
   int code = GifLastError();
+#endif
   switch (code) {
     case E_GIF_ERR_OPEN_FAILED: /* should not see this */
       return "Failed to open given file";
@@ -1090,19 +1101,30 @@ int readGIF(char *path, rasterBufferObj *rb)
   ColorMapObject *cmap;
   int interlacedOffsets[] = {0,4,2,1};
   int interlacedJumps[] = {8,8,4,2};
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+  int errcode;
+#endif
 
 
   rb->type = MS_BUFFER_BYTE_RGBA;
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+  image =  DGifOpenFileName(path, &errcode);
+  if (image == NULL) {
+    msSetError(MS_MISCERR,"failed to load gif image: %s","readGIF()", gif_error_msg(errcode));
+    return MS_FAILURE;
+  }
+#else
   image =  DGifOpenFileName(path);
   if (image == NULL) {
     msSetError(MS_MISCERR,"failed to load gif image: %s","readGIF()", gif_error_msg());
     return MS_FAILURE;
   }
+#endif
   rb->width = image->SWidth;
   rb->height = image->SHeight;
   rb->data.rgba.row_step = rb->width * 4;
   rb->data.rgba.pixel_step = 4;
-  rb->data.rgba.pixels = (unsigned char*)malloc(rb->width*rb->height*4*sizeof(unsigned char*));
+  rb->data.rgba.pixels = (unsigned char*)malloc(rb->width*rb->height*4*sizeof(unsigned char));
   b = rb->data.rgba.b = &rb->data.rgba.pixels[0];
   g = rb->data.rgba.g = &rb->data.rgba.pixels[1];
   r = rb->data.rgba.r = &rb->data.rgba.pixels[2];
@@ -1122,7 +1144,11 @@ int readGIF(char *path, rasterBufferObj *rb)
 
   do {
     if (DGifGetRecordType(image, &recordType) == GIF_ERROR) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+      msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg(image->Error));
+#else
       msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg());
+#endif
       return MS_FAILURE;
     }
 
@@ -1132,7 +1158,11 @@ int readGIF(char *path, rasterBufferObj *rb)
         break;
       case IMAGE_DESC_RECORD_TYPE:
         if (DGifGetImageDesc(image) == GIF_ERROR) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+          msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg(image->Error));
+#else
           msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg());
+#endif
           return MS_FAILURE;
         }
         if (!firstImageRead) {
@@ -1159,7 +1189,11 @@ int readGIF(char *path, rasterBufferObj *rb)
                 g = rb->data.rgba.g + offset;
                 b = rb->data.rgba.b + offset;
                 if (DGifGetLine(image, line, width) == GIF_ERROR) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+                  msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()",gif_error_msg(image->Error));
+#else
                   msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()",gif_error_msg());
+#endif
                   return MS_FAILURE;
                 }
 
@@ -1188,7 +1222,11 @@ int readGIF(char *path, rasterBufferObj *rb)
               g = rb->data.rgba.g + offset;
               b = rb->data.rgba.b + offset;
               if (DGifGetLine(image, line, width) == GIF_ERROR) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+                msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()",gif_error_msg(image->Error));
+#else
                 msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()",gif_error_msg());
+#endif
                 return MS_FAILURE;
               }
               for(j=0; j<width; j++) {
@@ -1213,12 +1251,20 @@ int readGIF(char *path, rasterBufferObj *rb)
         } else {
           /* Skip all next images */
           if (DGifGetCode(image, &codeSize, &codeBlock) == GIF_ERROR) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+            msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg(image->Error));
+#else
             msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg());
+#endif
             return MS_FAILURE;
           }
           while (codeBlock != NULL) {
             if (DGifGetCodeNext(image, &codeBlock) == GIF_ERROR) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+              msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg(image->Error));
+#else
               msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg());
+#endif
               return MS_FAILURE;
             }
           }
@@ -1227,14 +1273,22 @@ int readGIF(char *path, rasterBufferObj *rb)
       case EXTENSION_RECORD_TYPE:
         /* skip all extension blocks */
         if (DGifGetExtension(image, &extCode, &extension) == GIF_ERROR) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+          msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg(image->Error));
+#else
           msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg());
+#endif
           return MS_FAILURE;
         }
         if(extCode == 249 && (extension[1] & 1))
           transIdx = extension[4];
         for (;;) {
           if (DGifGetExtensionNext(image, &extension) == GIF_ERROR) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+            msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg(image->Error));
+#else
             msSetError(MS_MISCERR,"corrupted gif image?: %s","readGIF()", gif_error_msg());
+#endif
             return MS_FAILURE;
           }
           if (extension == NULL)
@@ -1254,7 +1308,11 @@ int readGIF(char *path, rasterBufferObj *rb)
   } while (recordType != TERMINATE_RECORD_TYPE);
 
   if (DGifCloseFile(image) == GIF_ERROR) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+    msSetError(MS_MISCERR,"failed to close gif after loading: %s","readGIF()", gif_error_msg(image->Error));
+#else
     msSetError(MS_MISCERR,"failed to close gif after loading: %s","readGIF()", gif_error_msg());
+#endif
     return MS_FAILURE;
   }
 

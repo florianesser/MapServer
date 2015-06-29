@@ -334,7 +334,7 @@ int msAddLabelGroup(mapObj *map, int layerindex, int classindex, shapeObj *shape
     }
   }
 
-  if (layerPtr->type == MS_LAYER_ANNOTATION && (cachePtr->numlabels > 1 || classPtr->leader.maxdistance)) {
+  if (layerPtr->type == MS_LAYER_ANNOTATION && (classPtr->numlabels > 1 || classPtr->leader.maxdistance)) {
     msSetError(MS_MISCERR, "Multiple Labels and/or LEADERs are not supported with annotation layers", "msAddLabelGroup()");
     return MS_FAILURE;
   }
@@ -351,25 +351,28 @@ int msAddLabelGroup(mapObj *map, int layerindex, int classindex, shapeObj *shape
       MS_IMAGE_RENDERER(maskLayer->maskimage)->getRasterBufferHandle(maskLayer->maskimage,&rb);
       x = MS_NINT(point->x);
       y = MS_NINT(point->y);
+      /* Using label repeatdistance, we might have a point with x/y below 0. See #4764 */
+      if (x >= 0 && x < rb.width && y >= 0 && y < rb.height) {
 #ifdef USE_GD
-      if(rb.type == MS_BUFFER_BYTE_RGBA) {
+        if(rb.type == MS_BUFFER_BYTE_RGBA) {
+          alphapixptr = rb.data.rgba.a+rb.data.rgba.row_step*y + rb.data.rgba.pixel_step*x;
+          if(!*alphapixptr) {
+            /* label point does not intersect mask */
+            return MS_SUCCESS;
+          }
+        } else {
+          if(!gdImageGetPixel(rb.data.gd_img,x,y))
+            return MS_SUCCESS;
+        }
+#else
+        assert(rb.type == MS_BUFFER_BYTE_RGBA);
         alphapixptr = rb.data.rgba.a+rb.data.rgba.row_step*y + rb.data.rgba.pixel_step*x;
         if(!*alphapixptr) {
           /* label point does not intersect mask */
           return MS_SUCCESS;
         }
-      } else {
-        if(!gdImageGetPixel(rb.data.gd_img,x,y))
-          return MS_SUCCESS;
-      }
-#else
-      assert(rb.type == MS_BUFFER_BYTE_RGBA);
-      alphapixptr = rb.data.rgba.a+rb.data.rgba.row_step*y + rb.data.rgba.pixel_step*x;
-      if(!*alphapixptr) {
-        /* label point does not intersect mask */
-        return MS_SUCCESS;
-      }
 #endif
+      }
     } else {
       msSetError(MS_MISCERR, "Layer (%s) references references a mask layer, but the selected renderer does not support them", "msAddLabelGroup()", layerPtr->name);
       return (MS_FAILURE);
@@ -543,54 +546,60 @@ int msAddLabel(mapObj *map, labelObj *label, int layerindex, int classindex, sha
       if (point) {
         int x = MS_NINT(point->x);
         int y = MS_NINT(point->y);
+        /* Using label repeatdistance, we might have a point with x/y below 0. See #4764 */
+        if (x >= 0 && x < rb.width && y >= 0 && y < rb.height) {
 #ifdef USE_GD
-        if(rb.type == MS_BUFFER_BYTE_RGBA) {
+          if(rb.type == MS_BUFFER_BYTE_RGBA) {
+            alphapixptr = rb.data.rgba.a+rb.data.rgba.row_step*y + rb.data.rgba.pixel_step*x;
+            if(!*alphapixptr) {
+              /* label point does not intersect mask */
+              return MS_SUCCESS;
+            }
+          } else {
+            if(!gdImageGetPixel(rb.data.gd_img,x,y)) {
+              return MS_SUCCESS;
+            }
+          }
+#else
+          assert(rb.type == MS_BUFFER_BYTE_RGBA);
           alphapixptr = rb.data.rgba.a+rb.data.rgba.row_step*y + rb.data.rgba.pixel_step*x;
           if(!*alphapixptr) {
             /* label point does not intersect mask */
             return MS_SUCCESS;
           }
-        } else {
-          if(!gdImageGetPixel(rb.data.gd_img,x,y)) {
-            return MS_SUCCESS;
-          }
-        }
-#else
-        assert(rb.type == MS_BUFFER_BYTE_RGBA);
-        alphapixptr = rb.data.rgba.a+rb.data.rgba.row_step*y + rb.data.rgba.pixel_step*x;
-        if(!*alphapixptr) {
-          /* label point does not intersect mask */
-          return MS_SUCCESS;
-        }
 #endif
+        }
       } else if (labelpath) {
         int i = 0;
         for (i = 0; i < labelpath->path.numpoints; i++) {
           int x = MS_NINT(labelpath->path.point[i].x);
           int y = MS_NINT(labelpath->path.point[i].y);
+          /* Using label repeatdistance, we might have a point with x/y below 0. See #4764 */
+          if (x >= 0 && x < rb.width && y >= 0 && y < rb.height) {
 #ifdef USE_GD
-          if (rb.type == MS_BUFFER_BYTE_RGBA) {
+            if (rb.type == MS_BUFFER_BYTE_RGBA) {
+              alphapixptr = rb.data.rgba.a + rb.data.rgba.row_step * y + rb.data.rgba.pixel_step*x;
+              if (!*alphapixptr) {
+                /* label point does not intersect mask */
+                msFreeLabelPathObj(labelpath);
+                return MS_SUCCESS;
+              }
+            } else {
+              if (!gdImageGetPixel(rb.data.gd_img, x, y)) {
+                msFreeLabelPathObj(labelpath);
+                return MS_SUCCESS;
+              }
+            }
+#else
+            assert(rb.type == MS_BUFFER_BYTE_RGBA);
             alphapixptr = rb.data.rgba.a + rb.data.rgba.row_step * y + rb.data.rgba.pixel_step*x;
             if (!*alphapixptr) {
               /* label point does not intersect mask */
               msFreeLabelPathObj(labelpath);
               return MS_SUCCESS;
             }
-          } else {
-            if (!gdImageGetPixel(rb.data.gd_img, x, y)) {
-              msFreeLabelPathObj(labelpath);
-              return MS_SUCCESS;
-            }
-          }
-#else
-          assert(rb.type == MS_BUFFER_BYTE_RGBA);
-          alphapixptr = rb.data.rgba.a + rb.data.rgba.row_step * y + rb.data.rgba.pixel_step*x;
-          if (!*alphapixptr) {
-            /* label point does not intersect mask */
-            msFreeLabelPathObj(labelpath);
-            return MS_SUCCESS;
-          }
 #endif
+          }
         }
       }
     } else {
@@ -1016,7 +1025,7 @@ int msGetTruetypeTextBBox(rendererVTableObj *renderer, char* fontstring, fontSet
   char *lookedUpFonts[MS_MAX_LABEL_FONTS];
   int numfonts;
   if(!renderer) {
-    outputFormatObj *format = msCreateDefaultOutputFormat(NULL,"AGG/PNG","tmp");
+    format = msCreateDefaultOutputFormat(NULL,"AGG/PNG","tmp");
     if(!format) {
       goto tt_cleanup;
     }
@@ -1148,6 +1157,11 @@ int msGetLabelSize(mapObj *map, labelObj *label, char *string, double size, rect
 
   if (map)
     renderer =MS_MAP_RENDERER(map);
+
+  if(!renderer) {
+    msSetError(MS_MISCERR, "cannot compute label size without valid map and renderer", "msGetLabelSize()");
+    return MS_FAILURE;
+  }
 
   if(label->type == MS_TRUETYPE) {
     if(!label->font) {

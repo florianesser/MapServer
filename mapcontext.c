@@ -392,6 +392,7 @@ int msLoadMapContextLayerFormat(CPLXMLNode *psFormat, layerObj *layer)
   pszValue = msLookupHashTable(&(layer->metadata), "wms_format");
 
   if (
+    pszValue && (
 #if !(defined USE_GD_PNG || defined USE_PNG)
     strcasecmp(pszValue, "image/png") == 0 ||
     strcasecmp(pszValue, "PNG") == 0 ||
@@ -404,7 +405,7 @@ int msLoadMapContextLayerFormat(CPLXMLNode *psFormat, layerObj *layer)
     strcasecmp(pszValue, "image/gif") == 0 ||
     strcasecmp(pszValue, "GIF") == 0 ||
 #endif
-    0 ) {
+    0 )) {
     char **papszList=NULL;
     int i, numformats=0;
 
@@ -1067,7 +1068,7 @@ int msLoadMapContextURL(mapObj *map, char *urlfilename, int unique_layer_names)
   }
 
   pszTmpFile = msTmpFile(map, map->mappath, NULL, "context.xml");
-  if (msHTTPGetFile(urlfilename, pszTmpFile, &status,-1, 0, 0) ==  MS_SUCCESS) {
+  if (msHTTPGetFile(urlfilename, pszTmpFile, &status,-1, 0, 0, 0) ==  MS_SUCCESS) {
     return msLoadMapContext(map, pszTmpFile, unique_layer_names);
   } else {
     msSetError(MS_MAPCONTEXTERR,

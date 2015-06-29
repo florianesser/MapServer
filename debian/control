@@ -1,26 +1,65 @@
 Source: mapserver
+Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
+Uploaders: Francesco Paolo Lovergine <frankie@debian.org>,
+           Alan Boudreault <aboudreault@mapgears.com>,
+           Bas Couwenberg <sebastic@xs4all.nl>
 Section: devel
 Priority: optional
-Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
-Uploaders: Francesco Paolo Lovergine <frankie@debian.org>, Alan Boudreault <aboudreault@mapgears.com>
-Standards-Version: 3.9.3
-Build-Depends: debhelper (>= 8), libcurl4-gnutls-dev, libpng-dev, zlib1g-dev (>= 1.1.4),
- libgd2-xpm-dev (>= 2.0.1-10), libfreetype6-dev (>= 2.0.9), libjpeg-dev, libgdal1-dev (>=1.9.0), libproj-dev (>=4.8.0),
- libpq-dev, php5-dev, swig, python-all (>= 2.6.6-3~), python-all-dev (>= 2.6.6-3~), libgeos-dev (>= 3.2.1-1~),
- ruby1.8, ruby1.8-dev, ruby1.9.1, ruby1.9.1-dev,
- sharutils, libsdl1.2-dev, libfreetype6-dev, chrpath,
- libfcgi-dev, libxml2-dev, libogdi3.2-dev, libxslt1-dev, libpam0g-dev, libreadline-dev, 
- libfribidi-dev, libedit-dev, libepsilon-dev, libcairo2-dev, libsvg-cairo
+Build-Depends: debhelper (>= 9),
+               dpkg-dev (>= 1.16.1.1),
+               libcurl4-gnutls-dev,
+               libpng12-dev,
+               libjpeg-dev,
+               zlib1g-dev (>= 1.1.2),
+               libgd2-xpm-dev,
+               libfreetype6-dev (>= 2.0.9),
+               libgdal-dev (>= 1.10.0-0~),
+               libproj-dev,
+               libgeos-dev (>= 3.3.1-1~),
+               libfribidi-dev,
+               libcairo2-dev,
+               libgif-dev,
+               librsvg2-dev,
+               libpq-dev,
+               php5-dev,
+               swig,
+               libperl-dev,
+               python-all (>= 2.6.6-3~),
+               python-all-dev (>= 2.6.6-3~),
+               ruby1.9.1,
+               ruby1.9.1-dev,
+               libfcgi-dev,
+               libxml2-dev,
+               libxslt1-dev,
+               pkg-kde-tools,
+               chrpath,
+               cmake (>= 2.8.0),
+               pkg-config,
+               docbook2x,
+               docbook-xsl,
+               docbook-xml,
+               xsltproc
 Build-Conflicts: libcurl3-openssl-dev
+XS-Ruby-Versions: ruby1.9.1
+X-Python-Version: 2.7
+Standards-Version: 3.9.5
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-grass/mapserver.git
+Vcs-Git: git://anonscm.debian.org/pkg-grass/mapserver.git
 Homepage: http://www.mapserver.org
-Vcs-Browser: http://git.debian.org/?p=pkg-grass/mapserver.git
-Vcs-Git: git://git.debian.org/git/pkg-grass/mapserver.git
 
-Package: libmapserver
+Package: libmapserver1
+Architecture: any
 Section: libs
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: cgi-mapserver, mapserver-bin, mapserver-doc
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Suggests: cgi-mapserver,
+          mapserver-bin,
+          mapserver-doc,
+          libmapscript-perl,
+          php5-mapscript,
+          python-mapscript,
+          ruby-mapscript
+Pre-Depends: ${misc:Pre-Depends}
 Description: Shared library for MapServer
  This package contains the shared library.
  .
@@ -29,43 +68,41 @@ Description: Shared library for MapServer
  functionality in MapScript is provided by the suggested mapscript
  library packages.
 
-Package: libmapserver-dev
+Package: libmapserver1-dev
+Architecture: any
 Section: libdevel
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: cgi-mapserver, mapserver-bin, mapserver-doc
-Description: Shared library for MapServer
- This package contains the shared library.
+Depends: libmapserver1 (= ${binary:Version}),
+         ${misc:Depends}
+Suggests: cgi-mapserver,
+          mapserver-bin,
+          mapserver-doc,
+          libmapscript-perl,
+          php5-mapscript,
+          python-mapscript,
+          ruby-mapscript
+Breaks: libmapserver-dev (<< 6.2.1-3~),
+        libmapserver-6.2.1-dev (<< 6.4.0-1~)
+Replaces: libmapserver-dev (<< 6.2.1-3~),
+          libmapserver-6.2.1-dev (<< 6.4.0-1~)
+Description: Shared library development files for MapServer
+ This package contains the development files for the shared library.
  .
  MapServer is a CGI-based framework for Internet map services which
  supports Open Geospatial Consortium (OGC) standards. Scripting
  functionality in MapScript is provided by the suggested mapscript
  library packages.
-
-Package: php5-mapscript
-Section: php
-Architecture: any
-Depends: ${shlibs:Depends}, libapache2-mod-php5
-Suggests: mapserver-bin, mapserver-doc
-Description: php5-cgi module for MapServer
- PHP MapScript provides MapServer functions for PHP scripts.
-
-Package: libmapscript-perl
-Section: perl
-Architecture: any
-Depends: ${perl:Depends}, ${shlibs:Depends}, ${misc:Depends}
-Suggests: mapserver-bin, mapserver-doc
-Provides: perl-mapscript
-Replaces: perl-mapscript
-Conflicts: perl-mapscript
-Description: Perl MapServer module
- Perl MapScript module provides MapServer functions for Perl scripts.
 
 Package: cgi-mapserver
-Section: web
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: mapserver-bin, mapserver-doc
+Section: web
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Suggests: mapserver-bin,
+          mapserver-doc,
+          libmapscript-perl,
+          php5-mapscript,
+          python-mapscript,
+          ruby-mapscript
 Description: CGI executable for MapServer
  This package contains the mapserv CGI program. It provides the
  MapServer template language, and can be used to implement Web Map
@@ -76,20 +113,18 @@ Description: CGI executable for MapServer
  functionality in MapScript is provided by the suggested mapscript
  library packages.
 
-Package: python-mapscript
-Section: python
-Architecture: any
-Depends: ${python:Depends}, ${shlibs:Depends}, ${misc:Depends}
-Suggests: mapserver-bin, mapserver-doc
-Provides: ${python:Provides}
-Description: Python library for MapServer
- Python MapScript provides MapServer functions for Python scripts.
-
 Package: mapserver-bin
-Section: misc
 Architecture: any
-Depends: ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}
-Suggests: libdbi-perl, perl-mapscript, python-mapscript, cgi-mapserver, mapserver-doc, php5-mapscript, shapelib
+Section: misc
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Suggests: cgi-mapserver,
+          mapserver-doc,
+          shapelib,
+          libmapscript-perl,
+          php5-mapscript,
+          python-mapscript,
+          ruby-mapscript
 Description: MapServer utilities
  This package provides command-line utilities for MapServer.
  .
@@ -99,10 +134,14 @@ Description: MapServer utilities
  library packages.
 
 Package: mapserver-doc
-Section: doc
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: perl-mapscript, python-mapscript, php5-mapscript, cgi-mapserver
+Section: doc
+Depends: ${misc:Depends}
+Suggests: cgi-mapserver,
+          libmapscript-perl,
+          php5-mapscript,
+          python-mapscript,
+          ruby-mapscript
 Description: documentation for MapServer
  This package provides some brief documentation for MapServer.
  .
@@ -111,28 +150,102 @@ Description: documentation for MapServer
  functionality in MapScript is provided by the suggested mapscript
  library packages.
 
-Package: libmapscript-ruby
-Section: ruby
-Architecture: all
-Depends: libmapscript-ruby1.8, ${misc:Depends}
-Description: Ruby MapServer library
- Ruby MapScript provides MapServer functions for Ruby scripts.
+Package: php5-mapscript
+Architecture: any
+Section: php
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Suggests: mapserver-bin,
+          mapserver-doc
+Description: php5-cgi module for MapServer
+ PHP MapScript provides MapServer functions for PHP scripts.
  .
- This package contains examples and depends on package for Debian
- default version of Ruby.
+ MapServer is a CGI-based framework for Internet map services which
+ supports Open Geospatial Consortium (OGC) standards.
+
+Package: libmapscript-perl
+Architecture: any
+Section: perl
+Depends: ${perl:Depends},
+         ${shlibs:Depends},
+         ${misc:Depends}
+Suggests: mapserver-bin,
+          mapserver-doc
+Conflicts: perl-mapscript
+Provides: perl-mapscript
+Replaces: perl-mapscript
+Description: Perl MapServer module
+ Perl MapScript module provides MapServer functions for Perl scripts.
+ .
+ MapServer is a CGI-based framework for Internet map services which
+ supports Open Geospatial Consortium (OGC) standards.
+
+Package: python-mapscript
+Architecture: any
+Section: python
+Depends: ${python:Depends},
+         ${shlibs:Depends},
+         ${misc:Depends}
+Suggests: mapserver-bin,
+          mapserver-doc
+Provides: ${python:Provides}
+Description: Python library for MapServer
+ Python MapScript provides MapServer functions for Python scripts.
+ .
+ MapServer is a CGI-based framework for Internet map services which
+ supports Open Geospatial Consortium (OGC) standards.
+
+Package: libmapscript-ruby
+Architecture: all
+Section: oldlibs
+Depends: ruby-mapscript,
+         ${misc:Depends}
+Description: Transitional dummy package for ruby-mapscript
+ This is a transitional dummy package to ease upgrades to the
+ ruby-mapscript package. It can safely be removed.
 
 Package: libmapscript-ruby1.8
-Section: ruby
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: mapserver-bin, mapserver-doc
-Description: Ruby MapServer library
- Ruby MapScript provides MapServer functions for Ruby scripts.
+Section: oldlibs
+Depends: ruby-mapscript,
+         ${misc:Depends}
+Description: Transitional package from libmapscript-ruby1.8 to ruby-mapscript
+ This is a transitional dummy package to ease upgrades from the
+ libmapscript-ruby1.8 package to the ruby-mapscript package.
+ It can safely be removed.
 
 Package: libmapscript-ruby1.9.1
-Section: ruby
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: mapserver-bin, mapserver-doc
-Description: Ruby MapServer library
+Section: oldlibs
+Depends: ruby-mapscript,
+         ${misc:Depends}
+Description: Transitional package from libmapscript-ruby1.9.1 to ruby-mapscript
+ This is a transitional dummy package to ease upgrades from the
+ libmapscript-ruby1.9.1 package to the ruby-mapscript package.
+ It can safely be removed.
+
+Package: ruby-mapscript
+Architecture: any
+Section: ruby
+Depends: ruby1.9.1,
+         ${shlibs:Depends},
+         ${misc:Depends}
+Suggests: mapserver-bin,
+          mapserver-doc
+Breaks: libmapscript-ruby (<< 6.4.0-1~),
+        libmapscript-ruby1.8 (<< 6.4.0-1~),
+        libmapscript-ruby1.9.1 (<< 6.4.0-1~)
+Provides: libmapscript-ruby,
+          libmapscript-ruby1.8,
+          libmapscript-ruby1.9.1
+Replaces: libmapscript-ruby (<< 6.4.0-1~),
+          libmapscript-ruby1.8 (<< 6.4.0-1~),
+          libmapscript-ruby1.9.1 (<< 6.4.0-1~)
+XB-Ruby-Versions: ruby1.9.1
+Description: MapServer library for Ruby
  Ruby MapScript provides MapServer functions for Ruby scripts.
+ .
+ This package contains examples and the MapServer functions for Ruby.
+ .
+ MapServer is a CGI-based framework for Internet map services which
+ supports Open Geospatial Consortium (OGC) standards.

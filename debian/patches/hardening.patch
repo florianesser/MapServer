@@ -1,0 +1,29 @@
+Description: Add support for hardening build flags.
+Author: Bas Couwenberg <sebastic@xs4all.nl>
+Last-Update: 2013-09-02
+--- a/mapscript/ruby/CMakeLists.txt
++++ b/mapscript/ruby/CMakeLists.txt
+@@ -7,6 +7,23 @@ include_directories(${PROJECT_SOURCE_DIR
+ include_directories(${PROJECT_SOURCE_DIR}/mapscript/ruby)
+ SWIG_ADD_MODULE(rubymapscript ruby ../mapscript.i)
+ 
++# Ruby mapscript fails to build with -Werror=format-security
++
++if(${CMAKE_C_FLAGS} MATCHES "-Werror=format-security")
++  string(REPLACE "-Werror=format-security" "" TMP "${CMAKE_C_FLAGS}")
++  set(CMAKE_C_FLAGS "${TMP}")
++endif(${CMAKE_C_FLAGS} MATCHES "-Werror=format-security")
++
++if(${CMAKE_CXX_FLAGS} MATCHES "-Werror=format-security")
++  string(REPLACE "-Werror=format-security" "" TMP "${CMAKE_CXX_FLAGS}")
++  set(CMAKE_CXX_FLAGS "${TMP}")
++endif(${CMAKE_CXX_FLAGS} MATCHES "-Werror=format-security")
++
++if(${CMAKE_CPP_FLAGS} MATCHES "-Werror=format-security")
++  string(REPLACE "-Werror=format-security" "" TMP "${CMAKE_CPP_FLAGS}")
++  set(CMAKE_CPP_FLAGS "${TMP}")
++endif(${CMAKE_CPP_FLAGS} MATCHES "-Werror=format-security")
++
+ SWIG_LINK_LIBRARIES(rubymapscript ${RUBY_LIBRARY} ${MAPSERVER_LIBMAPSERVER})
+ 
+ set_target_properties(${SWIG_MODULE_rubymapscript_REAL_NAME} PROPERTIES PREFIX "")

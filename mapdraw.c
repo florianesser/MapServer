@@ -34,7 +34,6 @@
 #include "mapcopy.h"
 
 
-
 #ifdef USE_GD
 /*
  * Functions to reset any pen (color index) values previously set. Used primarily to reset things when
@@ -447,14 +446,13 @@ imageObj *msDrawMap(mapObj *map, int querymap)
           return(NULL);
         }
       }
-    }
-
-    if(map->debug >= MS_DEBUGLEVEL_TUNING || lp->debug >= MS_DEBUGLEVEL_TUNING) {
-      msGettimeofday(&endtime, NULL);
-      msDebug("msDrawMap(): Layer %d (%s), %.3fs\n",
-              map->layerorder[i], lp->name?lp->name:"(null)",
-              (endtime.tv_sec+endtime.tv_usec/1.0e6)-
-              (starttime.tv_sec+starttime.tv_usec/1.0e6) );
+      if(map->debug >= MS_DEBUGLEVEL_TUNING || lp->debug >= MS_DEBUGLEVEL_TUNING) {
+        msGettimeofday(&endtime, NULL);
+        msDebug("msDrawMap(): Layer %d (%s), %.3fs\n",
+                map->layerorder[i], lp->name?lp->name:"(null)",
+                (endtime.tv_sec+endtime.tv_usec/1.0e6)-
+                (starttime.tv_sec+starttime.tv_usec/1.0e6) );
+      }
     }
   }
 
@@ -468,6 +466,13 @@ imageObj *msDrawMap(mapObj *map, int querymap)
 
     if(MS_SUCCESS != msEmbedScalebar(map, image)) {
       msFreeImage( image );
+#if defined(USE_WMS_LYR) || defined(USE_WFS_LYR)
+      /* Cleanup WMS/WFS Request stuff */
+      if (pasOWSReqInfo) {
+         msHTTPFreeRequestObj(pasOWSReqInfo, numOWSRequests);
+         msFree(pasOWSReqInfo);
+      }
+#endif
       return NULL;
     }
 
@@ -479,6 +484,13 @@ imageObj *msDrawMap(mapObj *map, int querymap)
   if(map->legend.status == MS_EMBED && !map->legend.postlabelcache) {
     if( msEmbedLegend(map, image) != MS_SUCCESS ) {
       msFreeImage( image );
+#if defined(USE_WMS_LYR) || defined(USE_WFS_LYR)
+      /* Cleanup WMS/WFS Request stuff */
+      if (pasOWSReqInfo) {
+         msHTTPFreeRequestObj(pasOWSReqInfo, numOWSRequests);
+         msFree(pasOWSReqInfo);
+      }
+#endif
       return NULL;
     }
   }
@@ -566,6 +578,13 @@ imageObj *msDrawMap(mapObj *map, int querymap)
 
     if(MS_SUCCESS != msEmbedScalebar(map, image)) {
       msFreeImage( image );
+#if defined(USE_WMS_LYR) || defined(USE_WFS_LYR)
+      /* Cleanup WMS/WFS Request stuff */
+      if (pasOWSReqInfo) {
+         msHTTPFreeRequestObj(pasOWSReqInfo, numOWSRequests);
+         msFree(pasOWSReqInfo);
+      }
+#endif
       return NULL;
     }
 
@@ -776,8 +795,11 @@ int msDrawLayer(mapObj *map, layerObj *layer, imageObj *image)
     renderer->startLayer(image_draw,map,layer);
   } else if (MS_RENDERER_PLUGIN(image_draw->format)) {
     rendererVTableObj *renderer = MS_IMAGE_RENDERER(image_draw);
-    if (layer->mask || (layer->opacity > 0 && layer->opacity < 100)) {
-      if (!renderer->supports_transparent_layers) {
+    if ((layer->mask && layer->connectiontype!=MS_WMS && layer->type != MS_LAYER_RASTER) || (layer->opacity > 0 && layer->opacity < 100)) {
+      /* masking occurs at the pixel/layer level for raster images, so we don't need to create a temporary image
+       in these cases
+       */
+      if (layer->mask || !renderer->supports_transparent_layers) {
         image_draw = msImageCreate(image->width, image->height,
                                    image->format, image->imagepath, image->imageurl, map->resolution, map->defresolution, NULL);
         if (!image_draw) {
@@ -981,7 +1003,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
     /* Check if the shape size is ok to be drawn */
     if((shape.type == MS_SHAPE_LINE || shape.type == MS_SHAPE_POLYGON) && (minfeaturesize > 0) && (msShapeCheckSize(&shape, minfeaturesize) == MS_FALSE)) {
       if(layer->debug >= MS_DEBUGLEVEL_V)
-        msDebug("msDrawVectorLayer(): Skipping shape (%d) because LAYER::MINFEATURESIZE is bigger than shape size\n", shape.index);
+        msDebug("msDrawVectorLayer(): Skipping shape (%ld) because LAYER::MINFEATURESIZE is bigger than shape size\n", shape.index);
       msFreeShape(&shape);
       continue;
     }
@@ -1041,7 +1063,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
     if (layer->type == MS_LAYER_LINE && msLayerGetProcessingKey(layer, "POLYLINE_NO_CLIP")) {
       drawmode |= MS_DRAWMODE_UNCLIPPEDLINES;
     }
-    
+
     if (cache) {
       styleObj *pStyle = layer->class[shape.classindex]->styles[0];
       colorObj tmp;
@@ -1094,7 +1116,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       retcode = MS_FAILURE;
       break;
     }
-
+    
     if(shape.numlines == 0) { /* once clipped the shape didn't need to be drawn */
       msFreeShape(&shape);
       continue;
@@ -1108,6 +1130,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
     }
 
     maxnumstyles = MS_MAX(maxnumstyles, layer->class[shape.classindex]->numstyles);
+
     msFreeShape(&shape);
   }
 
@@ -1267,19 +1290,16 @@ int msDrawQueryLayer(mapObj *map, layerObj *layer, imageObj *image)
   /* if MS_HILITE, alter the one style (always at least 1 style), and set a MINDISTANCE for the labelObj to avoid duplicates */
   if(map->querymap.style == MS_HILITE) {
     if (layer->numclasses > 0) {
-      colorbuffer = (colorObj*)malloc(layer->numclasses*sizeof(colorObj));
-      mindistancebuffer = (int*)malloc(layer->numclasses*sizeof(int));
-
-      if (colorbuffer == NULL || mindistancebuffer == NULL) {
-        msSetError(MS_MEMERR, "Failed to allocate memory for colorbuffer/mindistancebuffer", "msDrawQueryLayer()");
-        return MS_FAILURE;
-      }
+      colorbuffer = (colorObj*)msSmallMalloc(layer->numclasses*sizeof(colorObj));
+      mindistancebuffer = (int*)msSmallMalloc(layer->numclasses*sizeof(int));
     }
 
     for(i=0; i<layer->numclasses; i++) {
       if(layer->type == MS_LAYER_POLYGON) { /* alter BOTTOM style since that's almost always the fill */
         if (layer->class[i]->styles == NULL) {
           msSetError(MS_MISCERR, "Don't know how to draw class %s of layer %s without a style definition.", "msDrawQueryLayer()", layer->class[i]->name, layer->name);
+          msFree(colorbuffer);
+          msFree(mindistancebuffer);
           return(MS_FAILURE);
         }
         if(MS_VALID_COLOR(layer->class[i]->styles[0]->color)) {
@@ -1365,7 +1385,11 @@ int msDrawQueryLayer(mapObj *map, layerObj *layer, imageObj *image)
     }
 
     if(cache) {
-      if(insertFeatureList(&shpcache, &shape) == NULL) return(MS_FAILURE); /* problem adding to the cache */
+      if(insertFeatureList(&shpcache, &shape) == NULL) {
+        msFree(colorbuffer);
+        msFree(mindistancebuffer);
+        return(MS_FAILURE); /* problem adding to the cache */
+      }
     }
 
     maxnumstyles = MS_MAX(maxnumstyles, layer->class[shape.classindex]->numstyles);
@@ -1467,14 +1491,21 @@ msDrawRasterLayerPlugin( mapObj *map, layerObj *layer, imageObj *image)
  */
 int msDrawRasterLayer(mapObj *map, layerObj *layer, imageObj *image)
 {
-  if (image && map && layer) {
-    if( MS_RENDERER_PLUGIN(image->format) ) {
-      return msDrawRasterLayerPlugin(map, layer, image);
-    } else if( MS_RENDERER_RAWDATA(image->format) )
-      return msDrawRasterLayerLow(map, layer, image, NULL);
+  
+  int rv = MS_FAILURE;
+  if (!image || !map || !layer) {
+    return rv;
   }
 
-  return MS_FAILURE;
+  /* RFC-86 Scale dependant token replacements*/
+  rv = msLayerApplyScaletokens(layer,(layer->map)?layer->map->scaledenom:-1);
+  if (rv != MS_SUCCESS) return rv;
+  if( MS_RENDERER_PLUGIN(image->format) )
+    rv = msDrawRasterLayerPlugin(map, layer, image);
+  else if( MS_RENDERER_RAWDATA(image->format) )
+    rv = msDrawRasterLayerLow(map, layer, image, NULL);
+  msLayerRestoreFromScaletokens(layer);
+  return rv;
 }
 
 /**
@@ -2056,7 +2087,7 @@ int msDrawShape(mapObj *map, layerObj *layer, shapeObj *shape, imageObj *image, 
         if (MS_SUCCESS != msPreloadImageSymbol(MS_MAP_RENDERER(map), symbol))
           return MS_FAILURE;
       } else if (symbol->type == MS_SYMBOL_SVG) {
-#ifdef USE_SVG_CAIRO
+#if defined(USE_SVG_CAIRO) || defined(USE_RSVG)
         if (MS_SUCCESS != msPreloadSVGSymbol(symbol))
           return MS_FAILURE;
 #else
@@ -2066,6 +2097,9 @@ int msDrawShape(mapObj *map, layerObj *layer, shapeObj *shape, imageObj *image, 
       }
       maxsize = MS_MAX(msSymbolGetDefaultSize(symbol), MS_MAX(style->size, style->width));
       maxunscaledsize = MS_MAX(style->minsize*image->resolutionfactor, style->minwidth*image->resolutionfactor);
+      if(shape->type == MS_SHAPE_POLYGON && !IS_PARALLEL_OFFSET(style->offsety)) {
+         maxsize += MS_MAX(fabs(style->offsety),fabs(style->offsetx));
+      }
       clip_buf = MS_MAX(clip_buf,MS_NINT(MS_MAX(maxsize * layer->scalefactor, maxunscaledsize) + 1));
     }
 
@@ -2216,7 +2250,7 @@ int msDrawPoint(mapObj *map, layerObj *layer, pointObj *point, imageObj *image, 
       } else
         msOffsetPointRelativeTo(point, layer);
 
-      if(labeltext) {
+      if(label) {
         if(layer->labelcache) {
           if(msAddLabel(map, label, layer->index, classindex, NULL, point, NULL, -1) != MS_SUCCESS) return(MS_FAILURE);
         } else {
@@ -2243,7 +2277,7 @@ int msDrawPoint(mapObj *map, layerObj *layer, pointObj *point, imageObj *image, 
         if(msScaleInBounds(map->scaledenom, theclass->styles[s]->minscaledenom, theclass->styles[s]->maxscaledenom))
           msDrawMarkerSymbol(&map->symbolset, image, point, theclass->styles[s], layer->scalefactor);
       }
-      if(labeltext && (strlen(labeltext)>0)) {
+      if(label) {
         if(layer->labelcache) {
           if(msAddLabel(map, label, layer->index, classindex, NULL, point, NULL, -1) != MS_SUCCESS) return(MS_FAILURE);
         } else
@@ -2947,12 +2981,17 @@ int msDrawLabelCache(imageObj *image, mapObj *map)
                   /* TODO: treat the case with multiple labels and/or leader lines */
                 }
 
-                /* apply offset and buffer settings */
-                label_offset_x = labelPtr->offsetx*scalefactor;
-                label_offset_y = labelPtr->offsety*scalefactor;
-                label_buffer = (labelPtr->buffer*image->resolutionfactor);
-                label_mindistance = (labelPtr->mindistance*image->resolutionfactor);
-
+                 /* apply offset and buffer settings */
+                 if(labelPtr->anglemode != MS_FOLLOW) {
+                   label_offset_x = labelPtr->offsetx*scalefactor;
+                   label_offset_y = labelPtr->offsety*scalefactor;
+                 } else {
+                   label_offset_x = 0;
+                   label_offset_y = 0;
+                 }
+                 label_buffer = (labelPtr->buffer*image->resolutionfactor);
+                 label_mindistance = (labelPtr->mindistance*image->resolutionfactor);
+                 
 #ifdef oldcode
                 /* adjust the baseline (see #1449) */
                 if(labelPtr->type == MS_TRUETYPE) {

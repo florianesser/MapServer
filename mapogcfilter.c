@@ -28,6 +28,7 @@
 
 
 #define _GNU_SOURCE
+#include "mapserver-config.h"
 
 #ifdef USE_OGR
 #include "cpl_minixml.h"
@@ -65,8 +66,7 @@ int FLTIsNumeric(char *pszValue)
       return MS_TRUE;
 #else
     char * p;
-    strtod (pszValue, &p);
-    if (*p == '\0') return MS_TRUE;
+    if (strtod(pszValue, &p) != 0  || *p == '\0') return MS_TRUE;
 #endif
   }
 
@@ -209,8 +209,8 @@ char *FLTGetExpressionForValuesRanges(layerObj *lp, char *item, char *value,  in
           pszTmpExpression = NULL;
         }
         pszExpression = msStringConcatenate(pszExpression, ")");
-        msFreeCharArray(paszElements, numelements);
       }
+      msFreeCharArray(paszElements, numelements);
     } else {
       /*range(s)*/
       paszElements = msStringSplit (value, ',', &numelements);
@@ -285,14 +285,15 @@ char *FLTGetExpressionForValuesRanges(layerObj *lp, char *item, char *value,  in
             msFree(pszTmpExpression);
             pszTmpExpression = NULL;
 
-            msFreeCharArray(papszRangeElements, nrangeelements);
           }
+          msFreeCharArray(papszRangeElements, nrangeelements);
         }
         pszExpression = msStringConcatenate(pszExpression, ")");
-        msFreeCharArray(paszElements, numelements);
       }
+      msFreeCharArray(paszElements, numelements);
     }
   }
+  msFree(pszTmpExpression);
   return pszExpression;
 }
 
@@ -384,34 +385,27 @@ int FLTParseEpsgString(char *pszEpsg, projectionObj *psProj)
   int nTokens = 0;
   char **tokens = NULL;
   int nEpsgTmp=0;
-  size_t bufferSize = 0;
 
 #ifdef USE_PROJ
   if (pszEpsg && psProj) {
     nTokens = 0;
+
+    /* There are several forms an epsg code may be given. In any case the */
+    /* epsg code is the last token.                                       */
+    /* TODO: To make sure it is an epsg code check the string, too.       */
+    /*  - urn:ogc:def:crs:EPSG:6.5:4326                                   */
+    /*  - urn:ogc:def:crs:EPSG::4326                                      */
+    /*  - http://www.opengis.net/gml/srs/epsg.xml#4326                    */
+    /*  - epsg:4326                                                       */
     tokens = msStringSplit(pszEpsg,'#', &nTokens);
-    if (tokens && nTokens == 2) {
-      char *szTmp;
-      bufferSize = 10+strlen(tokens[1])+1;
-      szTmp = (char *)malloc(bufferSize);
-      snprintf(szTmp, bufferSize, "init=epsg:%s", tokens[1]);
-      msInitProjection(psProj);
-      if (msLoadProjectionString(psProj, szTmp) == 0)
-        nStatus = MS_TRUE;
-      free(szTmp);
-    } else if (tokens &&  nTokens == 1) {
-      if (tokens)
-        msFreeCharArray(tokens, nTokens);
-      nTokens = 0;
-
+    if( tokens && nTokens == 1 ) {
+      msFreeCharArray(tokens, nTokens);
       tokens = msStringSplit(pszEpsg,':', &nTokens);
-      nEpsgTmp = -1;
-      if (tokens &&  nTokens == 1) {
-        nEpsgTmp = atoi(tokens[0]);
+    }
 
-      } else if (tokens &&  nTokens == 2) {
-        nEpsgTmp = atoi(tokens[1]);
-      }
+    if (tokens && nTokens > 1) {
+      nEpsgTmp = atoi(tokens[nTokens-1]);
+
       if (nEpsgTmp > 0) {
         char szTmp[32];
         snprintf(szTmp, sizeof(szTmp), "init=epsg:%d",nEpsgTmp);
@@ -420,6 +414,7 @@ int FLTParseEpsgString(char *pszEpsg, projectionObj *psProj)
           nStatus = MS_TRUE;
       }
     }
+
     if (tokens)
       msFreeCharArray(tokens, nTokens);
   }
@@ -435,11 +430,11 @@ int FLTGML2Shape_XMLNode(CPLXMLNode *psNode, shapeObj *psShp)
   CPLXMLNode *psCoordinates = NULL;
   char *pszTmpCoord = NULL;
   char **szCoords = NULL;
-  int nCoords = 0;
+  int nCoords = 0, status = MS_FALSE;
 
 
   if (!psNode || !psShp)
-    return MS_FALSE;
+    return status;
 
 
   if( strcasecmp(psNode->pszValue,"PointType") == 0
@@ -464,12 +459,13 @@ int FLTGML2Shape_XMLNode(CPLXMLNode *psNode, shapeObj *psShp)
         msAddLine(psShp, &line);
         free(line.point);
 
-        return MS_TRUE;
+        status = MS_TRUE;
       }
+      msFreeCharArray(szCoords, nCoords);
     }
   }
 
-  return MS_FALSE;
+  return status;
 }
 
 
@@ -503,14 +499,11 @@ int FLTApplySimpleSQLFilter(FilterEncodingNode *psNode, mapObj *map,
   char *szExpression = NULL;
   rectObj sQueryRect = map->extent;
   char *szEPSG = NULL;
-  char **tokens = NULL;
-  int nTokens = 0, nEpsgTmp = 0;
   projectionObj sProjTmp;
   char *pszBuffer = NULL;
   int bConcatWhere = 0;
   int bHasAWhere =0;
   char *pszTmp = NULL, *pszTmp2 = NULL;
-  size_t bufferSize = 0;
   char *tmpfilename = NULL;
 
   lp = (GET_LAYER(map, iLayerIndex));
@@ -518,43 +511,10 @@ int FLTApplySimpleSQLFilter(FilterEncodingNode *psNode, mapObj *map,
   /* if there is a bbox use it */
   szEPSG = FLTGetBBOX(psNode, &sQueryRect);
   if(szEPSG && map->projection.numargs > 0) {
-#ifdef USE_PROJ
-    nTokens = 0;
-    tokens = msStringSplit(szEPSG,'#', &nTokens);
-    if (tokens && nTokens == 2) {
-      char *szTmp;
-      bufferSize = 10+strlen(tokens[1])+1;
-      szTmp = (char *)malloc(bufferSize);
-      snprintf(szTmp, bufferSize, "init=epsg:%s",tokens[1]);
-      msInitProjection(&sProjTmp);
-      if (msLoadProjectionString(&sProjTmp, szTmp) == 0)
-        msProjectRect(&sProjTmp, &map->projection,  &sQueryRect);
-      free(szTmp);
-    } else if (tokens &&  nTokens == 1) {
-      if (tokens)
-        msFreeCharArray(tokens, nTokens);
-      nTokens = 0;
-
-      tokens = msStringSplit(szEPSG,':', &nTokens);
-      nEpsgTmp = -1;
-      if (tokens &&  nTokens == 1) {
-        nEpsgTmp = atoi(tokens[0]);
-
-      } else if (tokens &&  nTokens == 2) {
-        nEpsgTmp = atoi(tokens[1]);
-      }
-      if (nEpsgTmp > 0) {
-        char szTmp[32];
-        snprintf(szTmp, sizeof(szTmp), "init=epsg:%d",nEpsgTmp);
-        msInitProjection(&sProjTmp);
-        if (msLoadProjectionString(&sProjTmp, szTmp) == 0)
-          msProjectRect(&sProjTmp, &map->projection,  &sQueryRect);
-        msFreeProjection(&sProjTmp);
-      }
+    if (FLTParseEpsgString(szEPSG, &sProjTmp)) {
+      msProjectRect(&sProjTmp, &map->projection, &sQueryRect);
+      msFreeProjection(&sProjTmp);
     }
-    if (tokens)
-      msFreeCharArray(tokens, nTokens);
-#endif
   }
 
   /* make sure that the layer can be queried*/
@@ -648,7 +608,7 @@ int FLTApplySimpleSQLFilter(FilterEncodingNode *psNode, mapObj *map,
     }
     if (tmpfilename) {
       msSaveMap(map,tmpfilename);
-      msDebug("FLTApplySimpleSQLFilter(): Map file after Filter was applied %s", tmpfilename);
+      msDebug("FLTApplySimpleSQLFilter(): Map file after Filter was applied %s\n", tmpfilename);
       msFree(tmpfilename);
     }
   }
@@ -775,6 +735,8 @@ int FLTLayerApplyPlainFilterToLayer(FilterEncodingNode *psNode, mapObj *map,
   int status =MS_FALSE;
 
   pszExpression = FLTGetCommonExpression(psNode,  GET_LAYER(map, iLayerIndex));
+  if(map->debug == MS_DEBUGLEVEL_VVV)
+    msDebug("FLTLayerApplyPlainFilterToLayer(): %s\n", pszExpression);
   if (pszExpression) {
     status = FLTApplyFilterToLayerCommonExpression(map, iLayerIndex, pszExpression);
     msFree(pszExpression);
@@ -852,8 +814,10 @@ FilterEncodingNode *FLTParseFilterEncoding(char *szXMLString)
   /* -------------------------------------------------------------------- */
   /*      validate the node tree to make sure that all the nodes are valid.*/
   /* -------------------------------------------------------------------- */
-  if (!FLTValidFilterNode(psFilterNode))
+  if (!FLTValidFilterNode(psFilterNode)) {
+    FLTFreeFilterEncodingNode(psFilterNode);
     return NULL;
+  }
 
 
   return psFilterNode;
@@ -1177,6 +1141,8 @@ void FLTInsertElementInNode(FilterEncodingNode *psFilterNode,
           ((rectObj *)psFilterNode->psRightNode->pOther)->miny = sBox.miny;
           ((rectObj *)psFilterNode->psRightNode->pOther)->maxx = sBox.maxx;
           ((rectObj *)psFilterNode->psRightNode->pOther)->maxy =  sBox.maxy;
+        } else {
+          msFree(pszSRS);
         }
       } else if (strcasecmp(psXMLNode->pszValue, "DWithin") == 0 ||
                  strcasecmp(psXMLNode->pszValue, "Beyond") == 0)
@@ -1206,11 +1172,10 @@ void FLTInsertElementInNode(FilterEncodingNode *psFilterNode,
             bPolygon = 1;
           else if ((psGMLElement= CPLGetXMLNode(psXMLNode, "Box")))
             bPolygon = 1;
-          else {
-            psGMLElement= CPLGetXMLNode(psXMLNode, "LineString");
-            if (psGMLElement)
-              bLine = 1;
-          }
+          else if ((psGMLElement= CPLGetXMLNode(psXMLNode, "LineString")))
+            bLine = 1;
+          else if ((psGMLElement= CPLGetXMLNode(psXMLNode, "MultiPoint")))
+            bPoint = 1;
         }
 
         psDistance = CPLGetXMLNode(psXMLNode, "Distance");
@@ -1277,18 +1242,14 @@ void FLTInsertElementInNode(FilterEncodingNode *psFilterNode,
           bPolygon = 1;
         else if ((psGMLElement= CPLGetXMLNode(psXMLNode, "Box")))
           bPolygon = 1;
-        else if ((psGMLElement= CPLGetXMLNode(psXMLNode, "LineString"))) {
-          if (psGMLElement)
-            bLine = 1;
-        }
-
-        else {
-          psGMLElement = CPLGetXMLNode(psXMLNode, "Point");
-          if (!psGMLElement)
-            psGMLElement =  CPLGetXMLNode(psXMLNode, "PointType");
-          if (psGMLElement)
-            bPoint =1;
-        }
+        else if ((psGMLElement= CPLGetXMLNode(psXMLNode, "LineString")))
+          bLine = 1;
+        else if ((psGMLElement= CPLGetXMLNode(psXMLNode, "MultiPoint")))
+          bPoint = 1;
+        else if ((psGMLElement = CPLGetXMLNode(psXMLNode, "Point")))
+          bPoint = 1;
+        else if ((psGMLElement = CPLGetXMLNode(psXMLNode, "PointType")))
+          bPoint = 1;
 
         if (psGMLElement) {
           psShape = (shapeObj *)msSmallMalloc(sizeof(shapeObj));
@@ -1589,10 +1550,6 @@ void FLTInsertElementInNode(FilterEncodingNode *psFilterNode,
     /* -------------------------------------------------------------------- */
     else if (FLTIsFeatureIdFilterType(psXMLNode->pszValue)) {
       psFilterNode->eType = FILTER_NODE_TYPE_FEATUREID;
-      pszFeatureId = (char *)CPLGetXMLValue(psXMLNode, "fid", NULL);
-      /*for FE 1.1.0 GmlObjectId */
-      if (pszFeatureId == NULL)
-        pszFeatureId = (char *)CPLGetXMLValue(psXMLNode, "id", NULL);
       pszFeatureIdList = NULL;
 
       psFeatureIdNode = psXMLNode;
@@ -1959,11 +1916,10 @@ shapeObj *FLTGetShape(FilterEncodingNode *psFilterNode, double *pdfDistance,
               else if (strcasecmp(szUnit,"px") == 0)
                 *pnUnit = MS_PIXELS;
 
-              msFreeCharArray(tokens, nTokens);
             }
           }
-        }
-
+        } 
+        msFreeCharArray(tokens, nTokens);
       }
 
       return (shapeObj *)psNode->pOther;
@@ -2268,8 +2224,10 @@ char *FLTGetLogicalComparisonSQLExpresssion(FilterEncodingNode *psFilterNode,
 
     nTmp = strlen(pszBuffer);
     pszTmp = FLTGetSQLExpression(psFilterNode->psRightNode, lp);
-    if (!pszTmp)
+    if (!pszTmp) {
+      free(pszBuffer);
       return NULL;
+    }
 
     pszBuffer = (char *)realloc(pszBuffer,
                                 sizeof(char) * (strlen(pszTmp) + nTmp +3));
@@ -2377,8 +2335,10 @@ char *FLTGetLogicalComparisonExpresssion(FilterEncodingNode *psFilterNode, layer
     free(pszTmp);
 
     pszTmp = FLTGetNodeExpression(psFilterNode->psRightNode, lp);
-    if (!pszTmp)
+    if (!pszTmp) {
+      msFree(pszBuffer);
       return NULL;
+    }
 
     nTmp = strlen(pszBuffer);
     pszBuffer = (char *)realloc(pszBuffer,
@@ -2659,8 +2619,10 @@ char *FLTGetIsBetweenComparisonSQLExpresssion(FilterEncodingNode *psFilterNode,
   /*      Get the bounds value which are stored like boundmin;boundmax    */
   /* -------------------------------------------------------------------- */
   aszBounds = msStringSplit(psFilterNode->psRightNode->pszValue, ';', &nBounds);
-  if (nBounds != 2)
+  if (nBounds != 2) {
+    msFreeCharArray(aszBounds, nBounds);
     return NULL;
+  }
   /* -------------------------------------------------------------------- */
   /*      check if the value is a numeric value or alphanumeric. If it    */
   /*      is alphanumeric, add quotes around attribute and values.        */
@@ -2726,6 +2688,7 @@ char *FLTGetIsBetweenComparisonSQLExpresssion(FilterEncodingNode *psFilterNode,
   /*closing paranthesis*/
   strlcat(szBuffer, ")", bufferSize);
 
+  msFreeCharArray(aszBounds, nBounds);
 
   return msStrdup(szBuffer);
 }
@@ -3291,11 +3254,10 @@ int FLTParseGMLEnvelope(CPLXMLNode *psRoot, rectObj *psBbox, char **ppszSRS)
           if (tokens && n >= 2) {
             psBbox->maxx = atof(tokens[0]);
             psBbox->maxy = atof(tokens[1]);
-            msFreeCharArray(tokens, n);
-
             bValid = 1;
           }
         }
+        msFreeCharArray(tokens, n);
       }
     }
   }
@@ -3346,8 +3308,7 @@ static void FLTStripNameSpacesFromPropertyName(FilterEncodingNode *psFilterNode)
           msFree(psFilterNode->pszValue);
           psFilterNode->pszValue = msStrdup(tokens[1]);
         }
-        if (tokens && n>0)
-          msFreeCharArray(tokens, n);
+        msFreeCharArray(tokens, n);
       }
     }
     if (psFilterNode->psLeftNode)
