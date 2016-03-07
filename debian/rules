@@ -66,7 +66,7 @@ CMAKE_OPTS := \
 		-DWITH_EXEMPI=0 \
 		-DWITH_XMLMAPFILE=0 \
 		-DWITH_V8=0 \
-		-DWITH_PIXMAN=1
+		-DWITH_PIXMAN=0
 
 %:
 	dh $@ --with python2,pkgkde_symbolshelper \
@@ -154,10 +154,9 @@ override_dh_installchangelogs:
 override_dh_installexamples:
 	dh_installexamples
 
-	chmod a-x $(CURDIR)/debian/php*-mapscript/usr/share/doc/php*-mapscript/examples/*.phtml
+	-chmod a-x $(CURDIR)/debian/php*-mapscript/usr/share/doc/php*-mapscript/examples/*.phtml
 
 override_dh_install:
-	$(RM) debian/*/usr/lib/*.h
 	dh_install --autodest --list-missing
 
 override_dh_compress:
