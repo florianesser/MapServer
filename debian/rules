@@ -22,7 +22,6 @@ CFLAGS += $(CPPFLAGS)
 CFLAGS += $(LDFLAGS)
 
 RUBYVERSIONS := $(shell dh_ruby --print-supported)
-PHP5API      := $(shell php-config5 --phpapi)
 
 MANPAGES := $(wildcard debian/man/*.*.xml)
 
@@ -83,7 +82,7 @@ override_dh_auto_clean:
 override_dh_auto_configure:
 	dh_auto_configure -- $(CMAKE_OPTS) \
 			     -DWITH_PYTHON=1 \
-			     -DWITH_PHP=1 \
+			     -DWITH_PHP=0 \
 			     -DWITH_PERL=1 \
 			     -DWITH_RUBY=0 \
 			     -DWITH_JAVA=1 \
@@ -142,19 +141,11 @@ override_dh_auto_install:
 	-mkdir -p debian/tmp/usr/lib/cgi-bin
 	install -m755 debian/tmp/usr/bin/mapserv debian/tmp/usr/lib/cgi-bin/mapserv
 
-	# PHP mapscript
-	echo 'misc:Depends=phpapi-'$(PHP5API) >> debian/php5-mapscript.substvars
-
-	-mkdir -p debian/tmp/etc/php5/mods-available/
-	install -m644 debian/mapscript.ini debian/tmp/etc/php5/mods-available/
-
 override_dh_installchangelogs:
 	dh_installchangelogs HISTORY.TXT
 
 override_dh_installexamples:
 	dh_installexamples
-
-	-chmod a-x $(CURDIR)/debian/php*-mapscript/usr/share/doc/php*-mapscript/examples/*.phtml
 
 override_dh_install:
 	dh_install --autodest --list-missing
