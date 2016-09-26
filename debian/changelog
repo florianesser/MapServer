@@ -1,3 +1,10 @@
+mapserver (7.0.2-1~xenial1) xenial; urgency=medium
+
+  * Rebuild for xenial.
+  * Update branch in gbp.conf & Vcs-Git URL.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 26 Sep 2016 23:17:19 +0200
+
 mapserver (7.0.2-1) unstable; urgency=medium
 
   * Update symbols for other architectures.
