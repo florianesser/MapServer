@@ -1,3 +1,20 @@
+mapserver (7.0.2-1) unstable; urgency=medium
+
+  * Update symbols for other architectures.
+  * Move from experimental to unstable.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Fri, 23 Sep 2016 14:13:34 +0200
+
+mapserver (7.0.2-1~exp1) experimental; urgency=medium
+
+  * New upstream release.
+  * Bump Standards-Version to 3.9.8, no changes.
+  * Drop unused override for incompatible-java-bytecode-format.
+  * Drop didnt-typo.patch, applied upstream.
+  * Update symbols for amd64.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Wed, 21 Sep 2016 21:26:23 +0200
+
 mapserver (7.0.1-4~xenial0) xenial; urgency=medium
 
   * Rebuild for GDAL 2.1.0.
