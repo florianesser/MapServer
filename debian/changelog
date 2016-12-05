@@ -1,3 +1,9 @@
+mapserver (7.0.3-1~xenial1) xenial; urgency=medium
+
+  * Rebuild for xenial.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 05 Dec 2016 22:23:01 +0100
+
 mapserver (7.0.3-1) unstable; urgency=high
 
   * New upstream release.
