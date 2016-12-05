@@ -1,3 +1,19 @@
+mapserver (7.0.3-1) unstable; urgency=high
+
+  * New upstream release.
+    - Fixes CVE-2016-9839
+  * Update symbols for amd64.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 05 Dec 2016 21:44:37 +0100
+
+mapserver (7.0.2-2) unstable; urgency=medium
+
+  * Enable pie hardening flags.
+    (closes: #844892)
+  * Drop unused overrides for hardening-no-pie.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Sat, 19 Nov 2016 10:39:25 +0100
+
 mapserver (7.0.2-1~trusty1) trusty; urgency=medium
 
   * Rebuild for trusty.
