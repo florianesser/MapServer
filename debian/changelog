@@ -1,8 +1,8 @@
-mapserver (6.0.1-3.2+deb7u3) UNRELEASED; urgency=high
+mapserver (6.0.1-3.2+deb7u3) wheezy-security; urgency=high
 
   * Add upstream patch to fix CVE-2016-9839.
 
- -- Bas Couwenberg <sebastic@debian.org>  Mon, 05 Dec 2016 22:18:33 +0100
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 05 Dec 2016 22:19:20 +0100
 
 mapserver (6.0.1-3.2+deb7u2) stable-proposed-updates; urgency=low
 
