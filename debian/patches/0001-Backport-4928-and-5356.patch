@@ -71,7 +71,7 @@ Subject: Backport #4928 and #5356
      CPLFree( pszLayerDef );
      msConnPoolRelease( layer, hDS );
      return NULL;
-@@ -1356,10 +1358,12 @@ static int msOGRFileWhichShapes(layerObj
+@@ -1353,10 +1355,12 @@ static int msOGRFileWhichShapes(layerObj
      if( OGR_L_SetAttributeFilter( psInfo->hLayer, layer->filter.string+6 )
          != OGRERR_NONE ) {
        msSetError(MS_OGRERR,
@@ -87,7 +87,7 @@ Subject: Backport #4928 and #5356
        RELEASE_OGR_LOCK;
        return MS_FAILURE;
      }
-@@ -1562,8 +1566,8 @@ msOGRFileNextShape(layerObj *layer, shap
+@@ -1559,8 +1563,8 @@ msOGRFileNextShape(layerObj *layer, shap
      if( (hFeature = OGR_L_GetNextFeature( psInfo->hLayer )) == NULL ) {
        psInfo->last_record_index_read = -1;
        if( CPLGetLastErrorType() == CE_Failure ) {
@@ -100,7 +100,7 @@ Subject: Backport #4928 and #5356
        } else {
 --- a/mappostgis.c
 +++ b/mappostgis.c
-@@ -2305,7 +2305,8 @@ int msPostGISLayerOpen(layerObj *layer)
+@@ -2309,7 +2309,8 @@ int msPostGISLayerOpen(layerObj *layer)
          }
        }
  
@@ -108,10 +108,10 @@ Subject: Backport #4928 and #5356
 +      msDebug("Database connection failed (%s) with connect string '%s'\nIs the database running? Is it allowing connections? Does the specified user exist? Is the password valid? Is the database on the standard port?.\n", PQerrorMessage(layerinfo->pgconn), maskeddata);
 +      msSetError(MS_QUERYERR, "Database connection failed.\nIs the database running? Is it allowing connections? Does the specified user exist? Is the password valid? Is the database on the standard port?", "msPostGISLayerOpen()");
  
+       if(layerinfo->pgconn) PQfinish(layerinfo->pgconn);
        free(maskeddata);
-       free(layerinfo);
-@@ -2327,7 +2328,6 @@ int msPostGISLayerOpen(layerObj *layer)
-         msSetError(MS_QUERYERR, "PostgreSQL database connection gone bad (%s)", "msPostGISLayerOpen()", PQerrorMessage(layerinfo->pgconn));
+@@ -2336,7 +2337,6 @@ int msPostGISLayerOpen(layerObj *layer)
+          * times there will be a leak... */
          return MS_FAILURE;
        }
 -

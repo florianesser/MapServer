@@ -1,8 +1,6 @@
-Index: mapserver/maplayer.c
-===================================================================
---- mapserver.orig/maplayer.c	2013-06-17 14:37:03.912065096 -0400
-+++ mapserver/maplayer.c	2013-08-21 15:26:01.513595914 -0400
-@@ -1473,7 +1473,7 @@
+--- a/maplayer.c
++++ b/maplayer.c
+@@ -1616,7 +1616,7 @@ int msInitializeVirtualTable(layerObj *l
        return(msRASTERLayerInitializeVirtualTable(layer));
        break;
      case(MS_ORACLESPATIAL):
@@ -11,11 +9,9 @@ Index: mapserver/maplayer.c
        break;
      case(MS_WFS):
        return(msWFSLayerInitializeVirtualTable(layer));
-Index: mapserver/mapserver.h
-===================================================================
---- mapserver.orig/mapserver.h	2013-08-21 15:27:01.725595237 -0400
-+++ mapserver/mapserver.h	2013-08-21 15:27:11.777595124 -0400
-@@ -2226,7 +2226,6 @@
+--- a/mapserver.h
++++ b/mapserver.h
+@@ -2290,7 +2290,6 @@ extern "C" {
    MS_DLL_EXPORT int msSDELayerInitializeVirtualTable(layerObj *layer);
    MS_DLL_EXPORT int msOGRLayerInitializeVirtualTable(layerObj *layer);
    MS_DLL_EXPORT int msPostGISLayerInitializeVirtualTable(layerObj *layer);

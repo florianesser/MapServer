@@ -1,11 +1,9 @@
 Description: Install headers and export cmake package for outside projects.
 Author: Bas Couwenberg <sebastic@xs4all.nl>
 Last-Update: 2013-10-21
-Index: mapserver/CMakeLists.txt
-===================================================================
---- mapserver.orig/CMakeLists.txt	2015-06-29 09:03:51.165737041 -0400
-+++ mapserver/CMakeLists.txt	2015-06-29 09:03:51.165737041 -0400
-@@ -37,6 +37,24 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -37,6 +37,24 @@ if (APPLE)
    set(CMAKE_FIND_FRAMEWORK "LAST")
  endif (APPLE)
  
@@ -30,7 +28,7 @@ Index: mapserver/CMakeLists.txt
  
  macro (ms_link_libraries)
    target_link_libraries(mapserver ${ARGV})
-@@ -230,11 +248,20 @@
+@@ -230,11 +248,20 @@ mapgeomtransform.c mapogroutput.c mapsde
  mapgeomutil.cpp mapkmlrenderer.cpp
  mapogr.cpp mapcontour.c mapsmoothing.c ${REGEX_SOURCES})
  
@@ -52,7 +50,7 @@ Index: mapserver/CMakeLists.txt
  if(BUILD_STATIC)
    add_library(mapserver_static STATIC ${mapserver_SOURCES} ${agg_SOURCES})
    set_target_properties( mapserver_static PROPERTIES
-@@ -276,6 +303,7 @@
+@@ -276,6 +303,7 @@ find_package(PNG)
  if(PNG_FOUND)
    include_directories(${PNG_INCLUDE_DIR})
    ms_link_libraries( ${PNG_LIBRARIES})
@@ -60,7 +58,7 @@ Index: mapserver/CMakeLists.txt
    set(USE_PNG 1)
  else(PNG_FOUND)
    report_mandatory_not_found(PNG)
-@@ -285,6 +313,7 @@
+@@ -285,6 +313,7 @@ find_package(JPEG)
  if(JPEG_FOUND)
    include_directories(${JPEG_INCLUDE_DIR})
    ms_link_libraries( ${JPEG_LIBRARY})
@@ -68,7 +66,7 @@ Index: mapserver/CMakeLists.txt
    set(USE_JPEG 1)
  else(JPEG_FOUND)
    report_mandatory_not_found(JPEG)
-@@ -296,6 +325,7 @@
+@@ -296,6 +325,7 @@ if(NOT FREETYPE_FOUND)
  endif(NOT FREETYPE_FOUND)
  include_directories(${FREETYPE_INCLUDE_DIR})
  ms_link_libraries( ${FREETYPE_LIBRARY})
@@ -76,7 +74,7 @@ Index: mapserver/CMakeLists.txt
  
  
  if(WITH_PROJ)
-@@ -305,6 +335,7 @@
+@@ -305,6 +335,7 @@ if(WITH_PROJ)
   else(NOT PROJ_FOUND)
      include_directories(${PROJ_INCLUDE_DIR})
      ms_link_libraries( ${PROJ_LIBRARY})
@@ -84,7 +82,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_PROJ 1)
   endif(NOT PROJ_FOUND)
  endif (WITH_PROJ)
-@@ -325,6 +356,7 @@
+@@ -325,6 +356,7 @@ if(WITH_GD)
   else(NOT GD_FOUND)
      include_directories(${GD_INCLUDE_DIR})
      ms_link_libraries( ${GD_LIBRARY})
@@ -92,7 +90,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_GD 1)
      if(GD_SUPPORTS_PNG)
        set(USE_GD_PNG 1)
-@@ -348,6 +380,7 @@
+@@ -348,6 +380,7 @@ if(WITH_FRIBIDI)
   else(NOT FRIBIDI_FOUND)
      include_directories(${FRIBIDI_INCLUDE_DIR})
      ms_link_libraries( ${FRIBIDI_LIBRARY})
@@ -100,7 +98,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_FRIBIDI 1)
      if(FRIBIDI_LEGACY)
        message(WARNING "Old Fribidi found, upgrade recommended")
-@@ -360,6 +393,7 @@
+@@ -360,6 +393,7 @@ if(WITH_ICONV)
    if(ICONV_FOUND)
      include_directories(${ICONV_INCLUDE_DIR})
      ms_link_libraries( ${ICONV_LIBRARY})
@@ -108,7 +106,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_ICONV 1)
    else(ICONV_FOUND)
      report_optional_not_found(ICONV)
-@@ -376,6 +410,7 @@
+@@ -376,6 +410,7 @@ if(WITH_CAIRO)
    if(CAIRO_FOUND)
      include_directories(${CAIRO_INCLUDE_DIRS})
      ms_link_libraries( ${CAIRO_LIBRARY})
@@ -116,7 +114,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_CAIRO 1)
    else(CAIRO_FOUND)
      report_optional_not_found(CAIRO)
-@@ -387,6 +422,7 @@
+@@ -387,6 +422,7 @@ if(WITH_MYSQL)
    if(MYSQL_FOUND)
      include_directories(${MYSQL_INCLUDE_DIR})
      ms_link_libraries( ${MYSQL_LIBRARY})
@@ -124,7 +122,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_MYSQL 1)
    else(MYSQL_FOUND)
      report_optional_not_found(MYSQL)
-@@ -404,6 +440,7 @@
+@@ -404,6 +440,7 @@ if(WITH_ORACLESPATIAL OR WITH_ORACLE_PLU
    find_package(Oracle)
    if(ORACLE_FOUND)
      include_directories(${ORACLE_INCLUDE_DIR})
@@ -132,7 +130,7 @@ Index: mapserver/CMakeLists.txt
    else(ORACLE_FOUND)
      report_optional_not_found(ORACLESPATIAL)
      #FIXME: error message here could be misleading, only states ORACLESPATIAL whereas
-@@ -430,6 +467,7 @@
+@@ -430,6 +467,7 @@ if(WITH_MSSQL2008)
  	add_library(msplugin_mssql2008 MODULE mapmssql2008.c)
  	target_link_libraries(msplugin_mssql2008 ${ODBC_LIBRARY} ${MAPSERVER_LIBMAPSERVER})
      set_target_properties(msplugin_mssql2008 PROPERTIES COMPILE_FLAGS "-DUSE_MSSQL2008_PLUGIN -DUSE_MSSQL2008")
@@ -140,7 +138,7 @@ Index: mapserver/CMakeLists.txt
  	set (USE_MSSQL2008 1)
    else(ODBC_FOUND)
      report_optional_not_found(ODBC)
-@@ -451,6 +489,7 @@
+@@ -451,6 +489,7 @@ if(WITH_SDE_PLUGIN)
        target_link_libraries(msplugin_sde92 ${SDE_LIBRARY_DIR}/pe.lib ${SDE_LIBRARY_DIR}/sg.lib ${SDE_LIBRARY_DIR}/sde.lib ${MAPSERVER_LIBMAPSERVER})
        set_target_properties(msplugin_sde92 PROPERTIES COMPILE_FLAGS "-DUSE_SDE")
      endif(SDE_VERSION STREQUAL "91")
@@ -148,7 +146,7 @@ Index: mapserver/CMakeLists.txt
      set(USE_SDE_PLUGIN 1)
    else(SDE_INCLUDE_DIR AND SDE_LIBRARY_DIR)
       MESSAGE( SEND_ERROR "Must specify SDE_INCLUDE_DIR and SDE_LIBRARY_DIR for WITH_SDE_PLUGIN")
-@@ -462,6 +501,7 @@
+@@ -462,6 +501,7 @@ if(WITH_SDE)
    if(SDE_FOUND)
      include_directories(${SDE_INCLUDE_DIRS})
      ms_link_libraries(${SDE_LIBRARIES})
@@ -156,7 +154,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_SDE 1)
      if(CMAKE_SIZEOF_VOID_P EQUAL 8)
        set(SDE64 1)
-@@ -477,6 +517,7 @@
+@@ -477,6 +517,7 @@ if(WITH_FCGI)
    if(FCGI_FOUND)
      include_directories(${FCGI_INCLUDE_DIR})
      target_link_libraries(mapserv ${FCGI_LIBRARY})
@@ -164,7 +162,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_FASTCGI 1)
    else(FCGI_FOUND)
      report_optional_not_found(FCGI)
-@@ -488,6 +529,7 @@
+@@ -488,6 +529,7 @@ if(WITH_GEOS)
    if(GEOS_FOUND)
      include_directories(${GEOS_INCLUDE_DIR})
      ms_link_libraries( ${GEOS_LIBRARY})
@@ -172,7 +170,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_GEOS 1)
    else(GEOS_FOUND)
      report_optional_not_found(GEOS)
-@@ -507,6 +549,7 @@
+@@ -507,6 +549,7 @@ if(WITH_POSTGIS)
      include_directories(${POSTGRESQL_INCLUDE_DIR})
      ms_link_libraries( ${POSTGRESQL_LIBRARY})
      CHECK_LIBRARY_EXISTS(pq "PQserverVersion" POSTGRESQL_LIBRARY POSTGIS_HAS_SERVER_VERSION)
@@ -180,7 +178,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_POSTGIS 1)
    else(POSTGRESQL_FOUND)
      report_optional_not_found(POSTGIS)
-@@ -518,6 +561,7 @@
+@@ -518,6 +561,7 @@ if(WITH_GDAL)
    if(GDAL_FOUND)
      include_directories(${GDAL_INCLUDE_DIR})
      ms_link_libraries( ${GDAL_LIBRARY})
@@ -188,7 +186,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_GDAL 1)
    else(GDAL_FOUND)
      report_optional_not_found(GDAL)
-@@ -546,8 +590,10 @@
+@@ -546,8 +590,10 @@ if(WITH_RSVG)
    if(RSVG_FOUND AND GOBJECT_FOUND)
      include_directories(${RSVG_INCLUDE_DIRS})
      ms_link_libraries( ${RSVG_LIBRARY} )
@@ -199,7 +197,7 @@ Index: mapserver/CMakeLists.txt
      set (USE_RSVG 1)
    else(RSVG_FOUND AND GOBJECT_FOUND)
      report_optional_not_found(RSVG)
-@@ -562,6 +608,7 @@
+@@ -562,6 +608,7 @@ if(WITH_OGR)
      if(GDAL_FOUND)
        include_directories(${GDAL_INCLUDE_DIR})
        ms_link_libraries( ${GDAL_LIBRARY})
@@ -207,7 +205,7 @@ Index: mapserver/CMakeLists.txt
        set (USE_OGR 1)
      else(GDAL_FOUND)
        message(SEND_ERROR "GDAL library could not be found and is needed for OGR support.
-@@ -581,6 +628,7 @@
+@@ -581,6 +628,7 @@ if(WITH_CURL)
     if(CURL_FOUND)
       include_directories(${CURL_INCLUDE_DIR})
       ms_link_libraries( ${CURL_LIBRARY})
@@ -215,7 +213,7 @@ Index: mapserver/CMakeLists.txt
       set(USE_CURL 1)
     else(CURL_FOUND)
       report_optional_not_found(CURL)
-@@ -719,6 +767,7 @@
+@@ -719,6 +767,7 @@ if(WITH_XMLMAPFILE)
      endif()
      include_directories(${LIBXSLT_INCLUDE_DIR})
      ms_link_libraries( ${LIBXSLT_LIBRARY} ${LIBXSLT_EXSLT_LIBRARY})
@@ -223,7 +221,7 @@ Index: mapserver/CMakeLists.txt
      set(USE_XMLMAPFILE 1)
    else(LIBXSLT_FOUND)
      message(SEND_ERROR "Xml Mapfile support requires XSLT support which was not found.
-@@ -734,6 +783,7 @@
+@@ -734,6 +783,7 @@ if(WITH_GIF)
    if(GIF_FOUND)
      include_directories(${GIF_INCLUDE_DIR})
      ms_link_libraries( ${GIF_LIBRARY})
@@ -231,7 +229,7 @@ Index: mapserver/CMakeLists.txt
      set(USE_GIF 1)
    else(GIF_FOUND)
      report_optional_not_found(GIF)
-@@ -745,6 +795,7 @@
+@@ -745,6 +795,7 @@ if(WITH_EXEMPI)
    if(LIBEXEMPI_FOUND)
      include_directories(${LIBEXEMPI_INCLUDE_DIR})
      ms_link_libraries( ${LIBEXEMPI_LIBRARY})
@@ -239,7 +237,7 @@ Index: mapserver/CMakeLists.txt
      set(USE_EXEMPI 1)
    else(LIBEXEMPI_FOUND)
      report_optional_not_found(EXEMPI)
-@@ -805,7 +856,9 @@
+@@ -805,7 +856,9 @@ configure_file (
    "${PROJECT_BINARY_DIR}/mapserver-version.h"
    )
  
@@ -250,7 +248,7 @@ Index: mapserver/CMakeLists.txt
  
  macro(status_optional_component component enabled libpath)
    if("${enabled}" EQUAL "1")
-@@ -903,23 +956,68 @@
+@@ -903,23 +956,68 @@ endif(WIN32)
  
  #INSTALL(FILES mapserver-api.h ${PROJECT_BINARY_DIR}/mapserver-version.h DESTINATION include)
  if(USE_ORACLE_PLUGIN)
@@ -325,10 +323,8 @@ Index: mapserver/CMakeLists.txt
 +install(EXPORT mapserverTargets
 +        DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev
 +)
-Index: mapserver/mapserver-config.cmake.in
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ mapserver/mapserver-config.cmake.in	2015-06-29 09:03:51.165737041 -0400
+--- /dev/null
++++ b/mapserver-config.cmake.in
 @@ -0,0 +1,18 @@
 +# - Config file for the mapserver package
 +# It defines the following variables
@@ -348,10 +344,8 @@ Index: mapserver/mapserver-config.cmake.in
 +# These are IMPORTED targets created by mapserverTargets.cmake
 +set(MAPSERVER_LIBRARIES mapserver)
 +set(MAPSERVER_EXECUTABLES sortshp shptree shptreevis msencrypt legend scalebar tile4ms shptreetst shp2img mapserv)
-Index: mapserver/mapserver-config-version.cmake.in
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ mapserver/mapserver-config-version.cmake.in	2015-06-29 09:03:51.165737041 -0400
+--- /dev/null
++++ b/mapserver-config-version.cmake.in
 @@ -0,0 +1,11 @@
 +set(PACKAGE_VERSION "@MapServer_VERSION_STRING@")
 +
