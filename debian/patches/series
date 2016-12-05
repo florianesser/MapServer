@@ -5,3 +5,4 @@ ruby-mapscript-install.patch
 cmake-mapserver-export.patch
 java-hardening.patch
 php56.patch
+0001-Backport-4928-and-5356.patch
