@@ -1,6 +1,7 @@
 mapserver (6.4.2-1~precise2) UNRELEASED; urgency=high
 
   * Add upstream patch to fix CVE-2016-9839.
+  * Update branch in gbp.conf & Vcs-Git URL.
 
  -- Bas Couwenberg <sebastic@debian.org>  Mon, 05 Dec 2016 22:03:30 +0100
 

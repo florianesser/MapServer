@@ -44,7 +44,7 @@ XS-Ruby-Versions: ruby1.9.1
 X-Python-Version: 2.7
 Standards-Version: 3.9.5
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-grass/mapserver.git
-Vcs-Git: git://anonscm.debian.org/pkg-grass/mapserver.git
+Vcs-Git: git://anonscm.debian.org/pkg-grass/mapserver.git -b ubuntu/precise
 Homepage: http://www.mapserver.org
 
 Package: libmapserver1
