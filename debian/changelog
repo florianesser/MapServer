@@ -1,4 +1,4 @@
-mapserver (6.0.1-3.2+deb7u3) wheezy; urgency=high
+mapserver (6.0.1-3.2+deb7u3) wheezy-security; urgency=high
 
   * Add upstream patch to fix CVE-2016-9839.
 
