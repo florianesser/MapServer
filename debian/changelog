@@ -1,4 +1,4 @@
-mapserver (6.4.1-5+deb8u1) jessie-security; urgency=high
+mapserver (6.4.1-5+deb8u1) stable; urgency=high
 
   * Add upstream patch to fix CVE-2016-9839.
 
