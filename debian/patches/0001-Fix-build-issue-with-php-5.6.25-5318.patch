@@ -1,0 +1,25 @@
+Description: Fix build issue with php >= 5.6.25.
+Author: Landry Breuil
+Origin: https://github.com/mapserver/mapserver/commit/d5cc5840683bded229dbc2cc7d534db6d1e1f386
+Bug: https://github.com/mapserver/mapserver/pull/5318
+
+--- a/mapscript/php/error.c
++++ b/mapscript/php/error.c
+@@ -31,6 +31,17 @@
+ 
+ #include "php_mapscript.h"
+ 
++#if PHP_VERSION_ID >= 50625
++#undef ZVAL_STRING
++#define ZVAL_STRING(z, s, duplicate) do {       \
++    const char *__s=(s);                            \
++    zval *__z = (z);                                        \
++    Z_STRLEN_P(__z) = strlen(__s);          \
++    Z_STRVAL_P(__z) = (duplicate?estrndup(__s, Z_STRLEN_P(__z)):(char*)__s);\
++    Z_TYPE_P(__z) = IS_STRING;                      \
++} while (0)
++#endif
++
+ zend_class_entry *mapscript_ce_error;
+ 
+ ZEND_BEGIN_ARG_INFO_EX(error___get_args, 0, 0, 1)
