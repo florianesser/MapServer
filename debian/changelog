@@ -1,3 +1,9 @@
+mapserver (7.0.4-1~trusty1) trusty; urgency=medium
+
+  * Rebuild for trusty.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 16 Jan 2017 19:52:22 +0100
+
 mapserver (7.0.4-1) unstable; urgency=high
 
   * New upstream release.
