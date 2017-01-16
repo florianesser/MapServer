@@ -32,7 +32,7 @@
 #include "mapserver.h"
 #include "mapresample.h"
 #include "mapthread.h"
-
+#include "maptime.h"
 
 
 extern int InvGeoTransform( double *gt_in, double *gt_out );
@@ -1270,6 +1270,9 @@ LoadGDALImages( GDALDatasetH hDS, int band_numbers[4], int band_count,
         if( bGotNoData && pafRawData[i] == fNoDataValue )
           continue;
 
+        if( CPLIsNan(pafRawData[i]) )
+          continue;
+
         if( !bMinMaxSet ) {
           dfScaleMin = dfScaleMax = pafRawData[i];
           bMinMaxSet = TRUE;
@@ -1714,6 +1717,9 @@ msDrawRasterLayerGDAL_16BitClassification(
   unsigned char *rb_cmap[4];
   CPLErr eErr;
   rasterBufferObj *mask_rb = NULL;
+  int lastC;
+  struct mstimeval starttime, endtime;
+
   if(layer->mask) {
     int ret;
     layerObj *maskLayer = GET_LAYER(map, msGetLayerIndex(map,layer->mask));
@@ -1762,6 +1768,9 @@ msDrawRasterLayerGDAL_16BitClassification(
 
   for( i = 1; i < nPixelCount; i++ ) {
     if( bGotNoData && pafRawData[i] == fNoDataValue )
+      continue;
+
+    if( CPLIsNan(pafRawData[i]) )
       continue;
 
     if( !bGotFirstValue ) {
@@ -1869,6 +1878,12 @@ msDrawRasterLayerGDAL_16BitClassification(
   rb_cmap[2] = (unsigned char *) msSmallCalloc(1,nBucketCount);
   rb_cmap[3] = (unsigned char *) msSmallCalloc(1,nBucketCount);
 
+
+  if(layer->debug >= MS_DEBUGLEVEL_TUNING) {
+    msGettimeofday(&starttime, NULL);
+  }
+
+  lastC = -1;
   for(i=0; i < nBucketCount; i++) {
     double dfOriginalValue;
 
@@ -1876,7 +1891,11 @@ msDrawRasterLayerGDAL_16BitClassification(
 
     dfOriginalValue = (i+0.5) / dfScaleRatio + dfScaleMin;
 
-    c = msGetClass_FloatRGB(layer, (float) dfOriginalValue, -1, -1, -1);
+    /* The creation of buckets takes a significant time when they are many, and many classes
+       as well. When iterating over buckets, a faster strategy is to reuse first the last used
+       class index. */
+    c = msGetClass_FloatRGB_WithFirstClassToTry(layer, (float) dfOriginalValue, -1, -1, -1, lastC);
+    lastC = c;
     if( c != -1 ) {
       int s;
 
@@ -1898,6 +1917,13 @@ msDrawRasterLayerGDAL_16BitClassification(
     }
   }
 
+  if(layer->debug >= MS_DEBUGLEVEL_TUNING) {
+    msGettimeofday(&endtime, NULL);
+    msDebug("msDrawRasterGDAL_16BitClassification() bucket creation time: %.3fs\n",
+            (endtime.tv_sec+endtime.tv_usec/1.0e6)-
+            (starttime.tv_sec+starttime.tv_usec/1.0e6) );
+  }
+
   /* ==================================================================== */
   /*      Now process the data, applying to the working imageObj.         */
   /* ==================================================================== */
@@ -1914,6 +1940,9 @@ msDrawRasterLayerGDAL_16BitClassification(
       if( bGotNoData && fRawValue == fNoDataValue ) {
         continue;
       }
+
+      if( CPLIsNan(fRawValue) )
+        continue;
 
       if(SKIP_MASK(j,i))
         continue;

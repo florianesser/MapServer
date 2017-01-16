@@ -1,8 +1,51 @@
-mapserver (7.0.1-4~xenial3) UNRELEASED; urgency=medium
+mapserver (7.0.4-1~xenial1) UNRELEASED; urgency=medium
 
   * Update branch in gbp.conf & Vcs-Git URL.
 
  -- Bas Couwenberg <sebastic@debian.org>  Mon, 16 Jan 2017 20:43:54 +0100
+
+mapserver (7.0.4-1) unstable; urgency=high
+
+  * New upstream release.
+    - Security release.
+  * Add Open Source Geospatial Foundation to copyright holders.
+  * Update symbols for amd64.
+  * Add dh-python to build dependencies.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 16 Jan 2017 19:38:29 +0100
+
+mapserver (7.0.3-1) unstable; urgency=high
+
+  * New upstream release.
+    - Fixes CVE-2016-9839
+  * Update symbols for amd64.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 05 Dec 2016 21:44:37 +0100
+
+mapserver (7.0.2-2) unstable; urgency=medium
+
+  * Enable pie hardening flags.
+    (closes: #844892)
+  * Drop unused overrides for hardening-no-pie.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Sat, 19 Nov 2016 10:39:25 +0100
+
+mapserver (7.0.2-1) unstable; urgency=medium
+
+  * Update symbols for other architectures.
+  * Move from experimental to unstable.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Fri, 23 Sep 2016 14:13:34 +0200
+
+mapserver (7.0.2-1~exp1) experimental; urgency=medium
+
+  * New upstream release.
+  * Bump Standards-Version to 3.9.8, no changes.
+  * Drop unused override for incompatible-java-bytecode-format.
+  * Drop didnt-typo.patch, applied upstream.
+  * Update symbols for amd64.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Wed, 21 Sep 2016 21:26:23 +0200
 
 mapserver (7.0.1-4~xenial2~php5.6) xenial; urgency=medium
 

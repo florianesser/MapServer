@@ -7,6 +7,7 @@ Section: devel
 Priority: optional
 Build-Depends: debhelper (>= 9),
                dh-php,
+               dh-python,
                dpkg-dev (>= 1.16.1.1),
                cmake (>= 2.8.12.1-1.2),
                chrpath,
@@ -44,7 +45,7 @@ Build-Depends: debhelper (>= 9),
                docbook-xml,
                xsltproc
 Build-Conflicts: libcurl3-openssl-dev
-Standards-Version: 3.9.7
+Standards-Version: 3.9.8
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-grass/mapserver.git
 Vcs-Git: https://anonscm.debian.org/git/pkg-grass/mapserver.git -b osgeo/10.5
 Homepage: http://www.mapserver.org
