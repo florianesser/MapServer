@@ -21,7 +21,6 @@ CFLAGS += $(CPPFLAGS)
 CFLAGS += $(LDFLAGS)
 
 RUBYVERSIONS := $(shell dh_ruby --print-supported)
-PHP5API      := $(shell php-config5.6 --phpapi)
 
 MANPAGES := $(wildcard debian/man/*.*.xml)
 
@@ -68,7 +67,7 @@ CMAKE_OPTS := \
 		-DWITH_PIXMAN=0
 
 %:
-	dh $@ --with python2,pkgkde_symbolshelper \
+	dh $@ --with php,python2,pkgkde_symbolshelper \
 	      --parallel \
 	      --buildsystem cmake
 
@@ -140,13 +139,6 @@ override_dh_auto_install:
 	# CGI mapserver
 	-mkdir -p debian/tmp/usr/lib/cgi-bin
 	install -m755 debian/tmp/usr/bin/mapserv debian/tmp/usr/lib/cgi-bin/mapserv
-
-	# TODO: Use dh_php for substvars & mapscript.ini installation
-	# PHP mapscript
-	echo 'misc:Depends=phpapi-'$(PHP5API) >> debian/php5.6-mapscript.substvars
-
-	-mkdir -p debian/tmp/etc/php/5.6/mods-available/
-	install -m644 debian/mapscript.ini debian/tmp/etc/php/5.6/mods-available/
 
 override_dh_installchangelogs:
 	dh_installchangelogs HISTORY.TXT
