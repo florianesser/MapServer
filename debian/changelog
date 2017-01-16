@@ -1,3 +1,9 @@
+mapserver (7.0.1-4~xenial3) UNRELEASED; urgency=medium
+
+  * Update branch in gbp.conf & Vcs-Git URL.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 16 Jan 2017 20:43:54 +0100
+
 mapserver (7.0.1-4~xenial2~php5.6) xenial; urgency=medium
 
   * Rebuild for GDAL 2.1.2.
