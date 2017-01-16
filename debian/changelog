@@ -2,6 +2,7 @@ mapserver (7.0.4-1~xenial1) UNRELEASED; urgency=medium
 
   * Update branch in gbp.conf & Vcs-Git URL.
   * Fix substvars for php5.6-mapscript package.
+  * Add patch to use include paths from php-config.
 
  -- Bas Couwenberg <sebastic@debian.org>  Mon, 16 Jan 2017 20:43:54 +0100
 
