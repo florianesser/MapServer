@@ -60,7 +60,7 @@ Suggests: cgi-mapserver,
           mapserver-bin,
           mapserver-doc,
           libmapscript-perl,
-          php5.6-mapscript,
+          php-mapscript,
           python-mapscript,
           ruby-mapscript
 Pre-Depends: ${misc:Pre-Depends}
@@ -97,7 +97,7 @@ Suggests: cgi-mapserver,
           mapserver-bin,
           mapserver-doc,
           libmapscript-perl,
-          php5.6-mapscript,
+          php-mapscript,
           python-mapscript,
           ruby-mapscript
 Breaks: libmapserver-6.2.1-dev (<< 6.4.0-1~),
@@ -120,7 +120,7 @@ Depends: ${shlibs:Depends},
 Suggests: mapserver-bin,
           mapserver-doc,
           libmapscript-perl,
-          php5.6-mapscript,
+          php-mapscript,
           python-mapscript,
           ruby-mapscript
 Description: CGI executable for MapServer
@@ -142,7 +142,7 @@ Suggests: cgi-mapserver,
           mapserver-doc,
           shapelib,
           libmapscript-perl,
-          php5.6-mapscript,
+          php-mapscript,
           python-mapscript,
           ruby-mapscript
 Description: MapServer utilities
@@ -159,7 +159,7 @@ Section: doc
 Depends: ${misc:Depends}
 Suggests: cgi-mapserver,
           libmapscript-perl,
-          php5.6-mapscript,
+          php-mapscript,
           python-mapscript,
           ruby-mapscript
 Description: documentation for MapServer
@@ -171,6 +171,21 @@ Description: documentation for MapServer
  library packages.
 
 Package: php5.6-mapscript
+Architecture: all
+Section: oldlibs
+Priority: extra
+Depends: php-mapscript,
+         ${misc:Depends}
+Description: transitional dummy package to php-mapscript
+ PHP MapScript provides MapServer functions for PHP scripts.
+ .
+ MapServer is a CGI-based framework for Internet map services which
+ supports Open Geospatial Consortium (OGC) standards.
+ .
+ This package is a transitional package from php5.6-mapscript to
+ php-mapscript. It can safely be removed.
+
+Package: php-mapscript
 Architecture: any
 Section: php
 Depends: ${php:Depends},
@@ -178,6 +193,8 @@ Depends: ${php:Depends},
          ${misc:Depends}
 Suggests: mapserver-bin,
           mapserver-doc
+Breaks: php5.6-mapscript (<< 7.0.4)
+Replaces: php5.6-mapscript (<< 7.0.4)
 Description: php-cgi module for MapServer
  PHP MapScript provides MapServer functions for PHP scripts.
  .
