@@ -1,3 +1,13 @@
+mapserver (7.0.4-1) unstable; urgency=high
+
+  * New upstream release.
+    - Security release.
+  * Add Open Source Geospatial Foundation to copyright holders.
+  * Update symbols for amd64.
+  * Add dh-python to build dependencies.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 16 Jan 2017 19:38:29 +0100
+
 mapserver (7.0.3-1~xenial1) xenial; urgency=medium
 
   * Rebuild for xenial.
