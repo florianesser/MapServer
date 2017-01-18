@@ -10,3 +10,5 @@ dont-export-mapserver-target-for-static-libmapserver.patch
 0001-Fix-java-mapscript-to-be-compatible-with-newer-swig.patch
 fix-types.patch
 should-typo.patch
+CVE-2016-9839.patch
+CVE-2017-5522.patch
