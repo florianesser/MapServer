@@ -2,3 +2,4 @@ hardening.patch
 perl-mapscript-install.patch
 ruby-mapscript-install.patch
 java-hardening.patch
+0001-security-fix-patch-by-EvenR.patch
