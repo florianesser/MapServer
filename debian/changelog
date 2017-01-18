@@ -1,3 +1,9 @@
+mapserver (6.4.2-1~precise3) UNRELEASED; urgency=medium
+
+  * Add upstream patch to fix CVE-2017-5522 (stack buffer overflow).
+
+ -- Bas Couwenberg <sebastic@debian.org>  Wed, 18 Jan 2017 22:33:15 +0100
+
 mapserver (6.4.2-1~precise2) precise; urgency=high
 
   * Add upstream patch to fix CVE-2016-9839.

@@ -5,3 +5,4 @@ ruby-mapscript-install.patch
 cmake-mapserver-export.patch
 oracle-plugin.patch
 0001-Backport-4928-and-5356.patch
+CVE-2017-5522.patch
