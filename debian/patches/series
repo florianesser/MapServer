@@ -7,3 +7,4 @@ java-hardening.patch
 php56.patch
 0001-Backport-4928-and-5356.patch
 0001-Fix-build-issue-with-php-5.6.25-5318.patch
+CVE-2017-5522.patch
