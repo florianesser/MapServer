@@ -4,3 +4,5 @@ perl-mapscript-install.patch
 ruby-mapscript-install.patch
 cmake-mapserver-export.patch
 cmake-ruby2.patch
+CVE-2016-9839.patch
+CVE-2017-5522.patch

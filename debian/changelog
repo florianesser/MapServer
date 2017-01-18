@@ -1,3 +1,11 @@
+mapserver (6.4.1-2ubuntu0.1) UNRELEASED; urgency=medium
+
+  * Non-maintainer upload.
+  * Add upstream patches to fix CVE-2016-9839 & CVE-2017-5522.
+    (LP: 1648998)
+
+ -- Bas Couwenberg <sebastic@debian.org>  Wed, 18 Jan 2017 23:11:42 +0100
+
 mapserver (6.4.1-2) unstable; urgency=low
 
   * Add gpb.conf to use pristine-tar by default.
