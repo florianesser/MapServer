@@ -2,7 +2,7 @@ mapserver (6.0.1-2ubuntu1.2) precise-security; urgency=medium
 
   * Non-maintainer upload.
   * Add upstream patches to fix CVE-2016-9839 & CVE-2017-5522.
-    (LP: 1648998)
+    (LP: #1648998)
 
  -- Bas Couwenberg <sebastic@debian.org>  Wed, 18 Jan 2017 23:18:10 +0100
 
