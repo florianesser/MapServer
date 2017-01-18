@@ -4,3 +4,4 @@ multiarch-libgd
 contenttype
 cve-2013-7262
 0001-Backport-4928-and-5356.patch
+CVE-2017-5522.patch
