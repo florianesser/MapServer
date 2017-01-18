@@ -3,3 +3,5 @@ perl-mapscript-install.patch
 ruby-mapscript-install.patch
 java-hardening.patch
 didnt-typo.patch
+CVE-2016-9839.patch
+CVE-2017-5522.patch
