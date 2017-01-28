@@ -1,3 +1,9 @@
+mapserver (7.0.4-1~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Sat, 28 Jan 2017 16:21:19 +0100
+
 mapserver (7.0.4-1) unstable; urgency=high
 
   * New upstream release.
