@@ -1,6 +1,7 @@
 mapserver (7.0.4-1~bpo8+1) jessie-backports; urgency=medium
 
   * Rebuild for jessie-backports.
+  * Drop 0001-security-fix-patch-by-EvenR.patch, included upstream.
 
  -- Bas Couwenberg <sebastic@debian.org>  Sat, 28 Jan 2017 16:21:19 +0100
 
