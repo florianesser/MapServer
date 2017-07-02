@@ -1,3 +1,10 @@
+mapserver (7.0.6-2~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports.
+  * Update branch in gbp.conf & Vcs-Git URL.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Sun, 02 Jul 2017 13:24:24 +0200
+
 mapserver (7.0.6-2) unstable; urgency=medium
 
   * Fix SOURCE_DATE_EPOCH use.
