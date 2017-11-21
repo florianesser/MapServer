@@ -1,3 +1,9 @@
+mapserver (7.0.7-1~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Tue, 21 Nov 2017 07:26:41 +0100
+
 mapserver (7.0.7-1) unstable; urgency=medium
 
   * New upstream release.
