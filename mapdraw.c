@@ -180,15 +180,24 @@ imageObj *msPrepareImage(mapObj *map, int allow_nonsquare)
   
 }
 
-static int msCompositeRasterBuffer(imageObj *img, rasterBufferObj *rb, LayerCompositer *comp) {
+static int msCompositeRasterBuffer(mapObj *map, imageObj *img, rasterBufferObj *rb, LayerCompositer *comp) {
   int ret = MS_SUCCESS;
   if(MS_IMAGE_RENDERER(img)->compositeRasterBuffer) {
     while(comp && ret == MS_SUCCESS) {
       rasterBufferObj *rb_ptr = rb;
-      if(comp->filter) {
-        rb_ptr = msApplyFilterToRasterBuffer(rb,comp->filter);
+      CompositingFilter *filter = comp->filter;
+      if(filter && comp->next) {
+       /* if we have another compositor to apply, then we need to copy the rasterBufferObj. Otherwise
+       * we can work on it directly */
+	rb_ptr = (rasterBufferObj*)msSmallCalloc(sizeof(rasterBufferObj),1);
+	msCopyRasterBuffer(rb_ptr,rb);
       }
-      ret = MS_IMAGE_RENDERER(img)->compositeRasterBuffer(img,rb_ptr,comp->comp_op, comp->opacity);
+      while(filter && ret == MS_SUCCESS) {
+        ret = msApplyCompositingFilter(map,rb_ptr,filter);
+        filter = filter->next;
+      }
+      if(ret == MS_SUCCESS)
+      	ret = MS_IMAGE_RENDERER(img)->compositeRasterBuffer(img,rb_ptr,comp->comp_op, comp->opacity);
       if(rb_ptr != rb) {
         msFreeRasterBuffer(rb_ptr);
         msFree(rb_ptr);
@@ -895,7 +904,7 @@ altformat_cleanup:
       /*we have a mask layer with no composition configured, do a nomral blend */
       retcode = renderer->mergeRasterBuffer(image,&rb,1.0,0,0,0,0,rb.width,rb.height);
     } else {
-      retcode = msCompositeRasterBuffer(image,&rb,layer->compositer);
+      retcode = msCompositeRasterBuffer(map,image,&rb,layer->compositer);
     }
     if(UNLIKELY(retcode == MS_FAILURE)) {
       goto imagedraw_cleanup;
@@ -958,6 +967,16 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
 #ifdef USE_PROJ
     if((map->projection.numargs > 0) && (layer->projection.numargs > 0)) {
       int bDone = MS_FALSE;
+
+#ifdef USE_GDAL
+      if( layer->connectiontype == MS_UVRASTER )
+      {
+          /* Nasty hack to make msUVRASTERLayerWhichShapes() aware that the */
+          /* original area of interest is (map->extent, map->projection)... */
+          /* Useful when dealin with UVRASTER that extend beyond 180 deg */
+          msUVRASTERLayerUseMapExtentAndProjectionForNextWhichShapes( layer, map );
+      }
+#endif
 
       /* For UVRaster, it is important that the searchrect is not too large */
       /* to avoid insufficient intermediate raster resolution, which could */
@@ -1033,10 +1052,10 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
             {
               /* otherwise clip the map extent with the reprojected layer */
               /* extent */
-              searchrect.minx = MAX( map_extent_minx, layer_extent.minx );
-              searchrect.maxx = MIN( map_extent_maxx, layer_extent.maxx );
-              searchrect.miny = MAX( map_extent_miny, layer_extent.miny );
-              searchrect.maxy = MIN( map_extent_maxy, layer_extent.maxy );
+              searchrect.minx = MS_MAX( map_extent_minx, layer_extent.minx );
+              searchrect.maxx = MS_MIN( map_extent_maxx, layer_extent.maxx );
+              searchrect.miny = MS_MAX( map_extent_miny, layer_extent.miny );
+              searchrect.maxy = MS_MIN( map_extent_maxy, layer_extent.maxy );
               /* and reproject into the layer projection */
               msProjectRect(&map_proj, &layer->projection, &searchrect);
             }
@@ -1058,6 +1077,14 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
   }
 
   status = msLayerWhichShapes(layer, searchrect, MS_FALSE);
+
+#ifdef USE_GDAL
+  if( layer->connectiontype == MS_UVRASTER )
+  {
+    msUVRASTERLayerUseMapExtentAndProjectionForNextWhichShapes( layer, NULL );
+  }
+#endif
+
   if(status == MS_DONE) { /* no overlap */
     msLayerClose(layer);
     return MS_SUCCESS;
@@ -1656,14 +1683,29 @@ int pointLayerDrawShape(mapObj *map, imageObj *image, layerObj *layer, shapeObj 
 {
   int l, c = shape->classindex, j, i, s;
   pointObj *point;
+  int ret = MS_FAILURE;
 
 #ifdef USE_PROJ
   if (layer->project && layer->transform == MS_TRUE)
     msProjectShape(&layer->projection, &map->projection, shape);
 #endif
 
-  for (l = 0; l < layer->class[c]->numlabels; l++)
-    if (layer->class[c]->labels[l]->angle != 0) layer->class[c]->labels[l]->angle -= map->gt.rotation_angle; /* TODO: is this right???? */
+  // Only take into account map rotation if the label and style angles are
+  // non-zero.
+  if( map->gt.rotation_angle )
+  {
+    for (l = 0; l < layer->class[c]->numlabels; l++)
+    {
+        if( layer->class[c]->labels[l]->angle != 0 )
+            layer->class[c]->labels[l]->angle -= map->gt.rotation_angle;
+    }
+
+    for (s = 0; s < layer->class[c]->numstyles; s++)
+    {
+        if( layer->class[c]->styles[s]->angle != 0 )
+            layer->class[c]->styles[s]->angle -= map->gt.rotation_angle;
+    }
+  }
 
   for (j = 0; j < shape->numlines; j++) {
     for (i = 0; i < shape->line[j].numpoints; i++) {
@@ -1680,26 +1722,44 @@ int pointLayerDrawShape(mapObj *map, imageObj *image, layerObj *layer, shapeObj 
               layer->class[c]->styles[s]->minscaledenom,
               layer->class[c]->styles[s]->maxscaledenom))
             if(UNLIKELY(MS_FAILURE == msDrawMarkerSymbol(map, image, point, layer->class[c]->styles[s], layer->scalefactor))) {
-              return MS_FAILURE;
+              goto end;
             }
         }
       }
       if(MS_DRAW_LABELS(drawmode)) {
         if (layer->labelcache) {
-          if (msAddLabelGroup(map, image, layer, c, shape, point, -1) != MS_SUCCESS) return (MS_FAILURE);
+          if (msAddLabelGroup(map, image, layer, c, shape, point, -1) != MS_SUCCESS) goto end;
         } else {
           for (l = 0; l < layer->class[c]->numlabels; l++)
             if(msGetLabelStatus(map,layer,shape,layer->class[c]->labels[l]) == MS_ON) {
               char *annotext = msShapeGetLabelAnnotation(layer,shape,layer->class[c]->labels[l]);
               if(UNLIKELY(MS_FAILURE == msDrawLabel(map, image, *point, annotext, layer->class[c]->labels[l], layer->scalefactor))) {
-                return MS_FAILURE;
+                goto end;
               }
             }
         }
       }
     }
   }
-  return MS_SUCCESS;
+  ret = MS_SUCCESS;
+
+end:
+  if( map->gt.rotation_angle )
+  {
+    for (l = 0; l < layer->class[c]->numlabels; l++)
+    {
+        if( layer->class[c]->labels[l]->angle != 0 )
+            layer->class[c]->labels[l]->angle += map->gt.rotation_angle;
+    }
+
+    for (s = 0; s < layer->class[c]->numstyles; s++)
+    {
+        if( layer->class[c]->styles[s]->angle != 0 )
+            layer->class[c]->styles[s]->angle += map->gt.rotation_angle;
+    }
+  }
+
+  return ret;
 }
 
 int lineLayerDrawShape(mapObj *map, imageObj *image, layerObj *layer, shapeObj *shape,
@@ -2205,7 +2265,6 @@ int msDrawLabel(mapObj *map, imageObj *image, pointObj labelPnt, char *string, l
   int needLabelPoint=MS_TRUE;
   int haveLabelText=MS_TRUE;
 
-
   if(!string || !*string)
     haveLabelText = MS_FALSE;
 
@@ -2231,14 +2290,13 @@ int msDrawLabel(mapObj *map, imageObj *image, pointObj labelPnt, char *string, l
       int i;
 
       for(i=0; i<label->numstyles; i++) {
-        if(label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOINT
-           || label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_NONE) {
+        if(label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOINT || label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_NONE) {
           if(UNLIKELY(MS_FAILURE == msDrawMarkerSymbol(map, image, &labelPnt, label->styles[i], scalefactor))) {
             if(haveLabelText)
               freeTextSymbol(&ts);
             return MS_FAILURE;
           }
-        } else if(haveLabelText && label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
+        } else if(haveLabelText && (label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY || label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELCENTER)) {
           if(needLabelPoly) {
             p = get_metrics(&labelPnt, label->position, ts.textpath, label->offsetx * ts.scalefactor,
                     label->offsety * ts.scalefactor, ts.rotation, 1, &lbounds);
@@ -2256,9 +2314,19 @@ int msDrawLabel(mapObj *map, imageObj *image, pointObj labelPnt, char *string, l
             needLabelPoint = MS_FALSE; /* don't re-compute */
             needLabelPoly = MS_FALSE;
           }
-          if(UNLIKELY(MS_FAILURE == msDrawShadeSymbol(map, image, &labelPoly, label->styles[i], ts.scalefactor))) {
-            freeTextSymbol(&ts);
-            return MS_FAILURE;
+          if(label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
+            if(UNLIKELY(MS_FAILURE == msDrawShadeSymbol(map, image, &labelPoly, label->styles[i], ts.scalefactor))) {
+              freeTextSymbol(&ts);
+              return MS_FAILURE;
+            }
+          } else {
+            pointObj labelCenter;
+            labelCenter.x = (lbounds.bbox.maxx + lbounds.bbox.minx)/2;
+            labelCenter.y = (lbounds.bbox.maxy + lbounds.bbox.miny)/2;
+            if(UNLIKELY(MS_FAILURE == msDrawMarkerSymbol(map, image, &labelCenter, label->styles[i], scalefactor))) {
+              freeTextSymbol(&ts);
+              return MS_FAILURE;
+            }
           }
         } else {
           msSetError(MS_MISCERR,"Unknown label geomtransform %s", "msDrawLabel()",label->styles[i]->_geomtransform.string);
@@ -2294,7 +2362,7 @@ int msDrawLabel(mapObj *map, imageObj *image, pointObj labelPnt, char *string, l
             freeTextSymbol(&ts);
             return MS_FAILURE;
           }
-        } else if(haveLabelText && label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
+        } else if(haveLabelText && (label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY || label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELCENTER)) {
           if(needLabelPoly) {
             get_metrics(&labelPnt, label->position, ts.textpath, label->offsetx * ts.scalefactor,
                     label->offsety * ts.scalefactor, ts.rotation, 1, &lbounds);
@@ -2311,9 +2379,19 @@ int msDrawLabel(mapObj *map, imageObj *image, pointObj labelPnt, char *string, l
               labelPolyPoints[3].y = lbounds.bbox.miny;
             }
           }
-          if(UNLIKELY(MS_FAILURE == msDrawShadeSymbol(map, image, &labelPoly, label->styles[i], scalefactor))) {
-            freeTextSymbol(&ts);
-            return MS_FAILURE;
+          if(label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
+            if(UNLIKELY(MS_FAILURE == msDrawShadeSymbol(map, image, &labelPoly, label->styles[i], scalefactor))) {
+              freeTextSymbol(&ts);
+              return MS_FAILURE;
+            }
+          } else {
+	    pointObj labelCenter;
+            labelCenter.x = (lbounds.bbox.maxx + lbounds.bbox.minx)/2;
+            labelCenter.y = (lbounds.bbox.maxy + lbounds.bbox.miny)/2;
+            if(UNLIKELY(MS_FAILURE == msDrawMarkerSymbol(map, image, &labelCenter, label->styles[i], scalefactor))) {
+              freeTextSymbol(&ts);
+              return MS_FAILURE;
+            }
           }
         } else {
           msSetError(MS_MISCERR,"Unknown label geomtransform %s", "msDrawLabel()",label->styles[i]->_geomtransform.string);
@@ -2423,10 +2501,8 @@ void offsetAndTest(mapObj *map, labelCacheMemberObj *cachePtr, double ox, double
     }
     if(ts->style_bounds) {
       for(j=0; j<ts->label->numstyles; j++) {
-        if(ts->label->styles[j]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOINT ||
-            ts->label->styles[j]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
+        if(ts->label->styles[j]->_geomtransform.type != MS_GEOMTRANSFORM_NONE)
           offset_label_bounds(ts->style_bounds[j], ts->style_bounds[j], ox, oy);
-        }
       }
     }
   }
@@ -2625,14 +2701,21 @@ int msDrawOffsettedLabels(imageObj *image, mapObj *map, int priority)
                 if(UNLIKELY(retval == MS_FAILURE)) {
                   goto offset_cleanup;
                 }
-              }
-              else if(ts->label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
+              } else if(ts->label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
                 retval = msDrawLabelBounds(map,image,ts->style_bounds[i],ts->label->styles[i], ts->scalefactor);
                 if(UNLIKELY(retval == MS_FAILURE)) {
                   goto offset_cleanup;
                 }
+	      } else if(ts->label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELCENTER) {
+                pointObj labelCenter;
+                labelCenter.x = (ts->style_bounds[i]->bbox.maxx + ts->style_bounds[i]->bbox.minx)/2;
+                labelCenter.y = (ts->style_bounds[i]->bbox.maxy + ts->style_bounds[i]->bbox.miny)/2;
+                retval = msDrawMarkerSymbol(map, image, &labelCenter, ts->label->styles[i], layerPtr->scalefactor);
+                if(UNLIKELY(retval == MS_FAILURE)) {
+                  goto offset_cleanup;
+                }
               } else {
-                msSetError(MS_MISCERR,"Labels only support LABELPNT and LABELPOLY GEOMTRANSFORMS", "msDrawOffsettedLabels()");
+                msSetError(MS_MISCERR,"Labels only support LABELPNT, LABELPOLY and LABELCENTER GEOMTRANSFORMS", "msDrawOffsettedLabels()");
                 retval = MS_FAILURE;
               }
             }
@@ -2757,28 +2840,61 @@ int computeMarkerBounds(mapObj *map, pointObj *annopoint, textSymbolObj *ts, lab
     return MS_TRUE;
 }
 
+
 /* check that the current entry does not fall close to a label with identical text, if configured so.
  * Currently only checks the first label/text */
 
-int msCheckLabelMinDistance(mapObj *map, labelCacheMemberObj *lc) {
-  double sqmindistance;
+int msCheckLabelMinDistance(mapObj *map, labelCacheMemberObj *lc)
+{
   int i;
   textSymbolObj *s; /* shortcut */
-  if(lc->numtextsymbols == 0) return MS_FALSE; /* no label with text */
+  textSymbolObj *ts;
+  rectObj buffered;
+  if (lc->numtextsymbols == 0)
+    return MS_FALSE; /* no label with text */
   s = lc->textsymbols[0];
-  if(!s->annotext || s->label->mindistance <= 0.0 || s->label->force == MS_TRUE) return MS_FALSE; /*  min distance is not checked */
-  sqmindistance = s->label->mindistance * s->label->mindistance * s->resolutionfactor * s->resolutionfactor;
-  for(i=0;i<map->labelcache.num_rendered_members;i++) {
+
+  if (!s->annotext || s->label->mindistance <= 0.0 || s->label->force == MS_TRUE)
+    return MS_FALSE; /*  min distance is not checked */
+
+  /* we buffer the label and check for intersection instead of calculating
+     the distance of two textpaths. we also buffer only the bbox of lc for 
+     faster computation (it is still compared to the full textpath
+     of the label cache members). 
+  */
+  buffered = lc->bbox;
+  buffered.minx -= s->label->mindistance * s->resolutionfactor;
+  buffered.miny -= s->label->mindistance * s->resolutionfactor;
+  buffered.maxx += s->label->mindistance * s->resolutionfactor;
+  buffered.maxy += s->label->mindistance * s->resolutionfactor;
+
+  for (i = 0; i < map->labelcache.num_rendered_members; i++) {
     labelCacheMemberObj *ilc = map->labelcache.rendered_text_symbols[i];
-    double sqdistance;
-    if(ilc->numtextsymbols == 0 || !ilc->textsymbols[0]->annotext) continue;
-    sqdistance = (lc->point.x - ilc->point.x)*(lc->point.x - ilc->point.x)+
-                 (lc->point.y - ilc->point.y)*(lc->point.y - ilc->point.y);
-    if(sqdistance < sqmindistance) {
-      if(!strcmp(s->annotext,ilc->textsymbols[0]->annotext)) {
+    if (ilc->numtextsymbols == 0 || !ilc->textsymbols[0]->annotext)
+       continue;
+
+    ts = ilc->textsymbols[0];
+    if (strcmp(s->annotext, ts->annotext) != 0) {
+      /* only check min distance against same label */
+      continue;
+    }
+
+    if (msPointInRect(&ilc->point, &buffered) == MS_TRUE) {
+      return MS_TRUE;
+    }
+
+    if(ts->textpath && ts->textpath->absolute) {
+      if (intersectLabelPolygons(ts->textpath->bounds.poly, &ilc->bbox, NULL, &buffered) == MS_TRUE) {
         return MS_TRUE;
       }
+      continue;
     }
+
+
+    if (intersectLabelPolygons(NULL, &ilc->bbox, NULL, &buffered) == MS_TRUE) {
+        return MS_TRUE;
+    }
+
   }
   return MS_FALSE;
 }
@@ -2794,6 +2910,18 @@ void copyLabelBounds(label_bounds *dst, label_bounds *src) {
       dst->poly->point[i] = src->poly->point[i];
     }
   }
+}
+
+static int getLabelPositionFromString(char *pszString) {
+  if (strcasecmp(pszString, "UL")==0) return MS_UL;
+  else if (strcasecmp(pszString, "LR")==0) return MS_LR;
+  else if (strcasecmp(pszString, "UR")==0) return MS_UR;
+  else if (strcasecmp(pszString, "LL")==0) return MS_LL;
+  else if (strcasecmp(pszString, "CR")==0) return MS_CR;
+  else if (strcasecmp(pszString, "CL")==0) return MS_CL;
+  else if (strcasecmp(pszString, "UC")==0) return MS_UC;
+  else if (strcasecmp(pszString, "LC")==0) return MS_LC;
+  else return MS_CC;
 }
 
 int msDrawLabelCache(mapObj *map, imageObj *image)
@@ -2831,14 +2959,12 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
       pointObj metrics_points[5];
       label_bounds metrics_bounds;
 
-
       label_marker_line.point = label_marker_points;
       label_marker_line.numpoints = 5;
       metrics_line.point = metrics_points;
       metrics_line.numpoints = 5;
       labelpoly_line.point = labelpoly_points;
       labelpoly_line.numpoints = 5;
-
 
       /* Look for labelcache_map_edge_buffer map metadata
        * If set then the value defines a buffer (in pixels) along the edge of the
@@ -2859,29 +2985,33 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
           layerPtr = (GET_LAYER(map, cachePtr->layerindex)); /* set a couple of other pointers, avoids nasty references */
           classPtr = (GET_CLASS(map, cachePtr->layerindex, cachePtr->classindex));
 
-          /* before going any futher (and maybe even computing label size for performance,
-           check that mindistance is respected */ 
-          if(cachePtr->numtextsymbols && cachePtr->textsymbols[0]->label->mindistance > 0.0 && cachePtr->textsymbols[0]->annotext) {
-            if(msCheckLabelMinDistance(map, cachePtr) == MS_TRUE) {
-              cachePtr->status = MS_DELETE;
-              MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG,map,
-                  "Skipping labelgroup %d \"%s\" in layer \"%s\": too close to an identical label (mindistance)\n",
-                  l, cachePtr->textsymbols[0]->annotext, layerPtr->name);
-              continue; /* move on to next entry, this one is too close to an already placed one */
-            }
-          }
           if(cachePtr->textsymbols[0]->textpath && cachePtr->textsymbols[0]->textpath->absolute) {
             /* we have an angle follow label */
+            cachePtr->bbox = cachePtr->textsymbols[0]->textpath->bounds.bbox;
+
+            /* before going any futher, check that mindistance is respected */
+            if (cachePtr->numtextsymbols && cachePtr->textsymbols[0]->label->mindistance > 0.0 && cachePtr->textsymbols[0]->annotext) {
+              if (msCheckLabelMinDistance(map, cachePtr) == MS_TRUE) {
+                cachePtr->status = MS_DELETE;
+                MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG, map,
+                          "Skipping labelgroup %d \"%s\" in layer \"%s\": too close to an identical label (mindistance)\n",
+                          l, cachePtr->textsymbols[0]->annotext, layerPtr->name);
+                continue; /* move on to next entry, this one is too close to an already placed one */
+              }
+            }
+
             if(!cachePtr->textsymbols[0]->label->force)
               cachePtr->status = msTestLabelCacheCollisions(map,cachePtr,&cachePtr->textsymbols[0]->textpath->bounds, priority, l);
             else
               cachePtr->status = MS_ON;
             if(cachePtr->status) {
-                if(UNLIKELY(MS_FAILURE == msDrawTextSymbol(map,image,cachePtr->textsymbols[0]->annopoint /*not used*/,cachePtr->textsymbols[0]))) {
-                  return MS_FAILURE;
-                }
-                cachePtr->bbox = cachePtr->textsymbols[0]->textpath->bounds.bbox;
-                insertRenderedLabelMember(map, cachePtr);
+
+
+              if (UNLIKELY(MS_FAILURE == msDrawTextSymbol(map, image, cachePtr->textsymbols[0]->annopoint /*not used*/, cachePtr->textsymbols[0])))
+              {
+                return MS_FAILURE;
+              }
+              insertRenderedLabelMember(map, cachePtr);
             } else {
               MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG,map,
                   "Skipping follow labelgroup %d \"%s\" in layer \"%s\": text collided\n",
@@ -2912,7 +3042,8 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
 
               textSymbolPtr = cachePtr->textsymbols[ll];
               for(i=0; i<textSymbolPtr->label->numstyles; i++) {
-                if(textSymbolPtr->label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
+                if(textSymbolPtr->label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY || 
+                   textSymbolPtr->label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELCENTER) {
                   need_labelpoly = 1;
                   break;
                 }
@@ -2935,9 +3066,9 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
                 if(label_marker_status == MS_OFF &&
                     !(textSymbolPtr->label->force==MS_ON || classPtr->leader)) {
                   cachePtr->status = MS_DELETE;
-                  MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG,map,
+                  MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG, map,
                       "Skipping label %d of labelgroup %d of class %d in layer \"%s\": marker collided\n",
-                      ll,l,cachePtr->classindex, layerPtr->name);
+                      ll, l, cachePtr->classindex, layerPtr->name);
                   break; /* the marker collided, break from multi-label loop */
                 }
               }
@@ -2959,9 +3090,9 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
                   labelpoint_bounds.bbox.maxx = cachePtr->point.x + 0.1;
                   labelpoint_bounds.bbox.miny = cachePtr->point.y - 0.1;
                   labelpoint_bounds.bbox.maxy = cachePtr->point.y + 0.1;
-                  if(MS_OFF == msTestLabelCacheCollisions(map, cachePtr, &labelpoint_bounds ,MS_MAX_LABEL_PRIORITY, l)) {
+                  if(MS_OFF == msTestLabelCacheCollisions(map, cachePtr, &labelpoint_bounds, MS_MAX_LABEL_PRIORITY, l)) {
                     cachePtr->status = MS_DELETE; /* we won't check for leader offseted positions, as the anchor point colided */
-                    MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG,map,
+                    MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG, map,
                         "Skipping label %d \"%s\" of labelgroup %d of class %d in layer \"%s\": labelpoint collided\n",
                         ll, textSymbolPtr->annotext, l, cachePtr->classindex, layerPtr->name);
                     break;
@@ -2994,11 +3125,18 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
                 if(textSymbolPtr->label->position == MS_AUTO) {
                   /* no point in using auto positionning if the marker cannot be placed */
                   int positions[MS_POSITIONS_LENGTH], npositions=0;
-
+		  
                   /*
                   **   (Note: might be able to re-order this for more speed.)
                   */
-                  if(layerPtr->type == MS_LAYER_POLYGON && marker_offset_x==0 ) {
+		  if(msLayerGetProcessingKey(layerPtr, "LABEL_POSITIONS")) {
+                    int p, ncustom_positions=0;
+                    char **custom_positions = msStringSplitComplex(msLayerGetProcessingKey(layerPtr, "LABEL_POSITIONS"), ",", &ncustom_positions, MS_STRIPLEADSPACES|MS_STRIPENDSPACES);
+                    for(p=0; p<MS_MIN(9,ncustom_positions); p++)
+                      positions[p] = getLabelPositionFromString(custom_positions[p]);
+                    npositions = p;
+                    msFree(custom_positions);
+		  } else if(layerPtr->type == MS_LAYER_POLYGON && marker_offset_x==0 ) {
                     positions[0]=MS_CC;
                     positions[1]=MS_UC;
                     positions[2]=MS_LC;
@@ -3135,9 +3273,9 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
                 }
               }
               if(!label_marker_status || ! metrics_status) {
-                MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG,map,
+                MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG, map,
                     "Putting label %d of labelgroup %d of class %d , layer \"%s\" in leader queue\n",
-                    ll,l,cachePtr->classindex, layerPtr->name);
+                    ll, l, cachePtr->classindex, layerPtr->name);
                 cachePtr->status = MS_OFF; /* we have a collision, but this entry is a candidate for leader testing */
               }
 
@@ -3150,7 +3288,8 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
                 if(!textSymbolPtr->style_bounds)
                   textSymbolPtr->style_bounds = msSmallCalloc(textSymbolPtr->label->numstyles, sizeof(label_bounds*));
                 for(its=0;its<textSymbolPtr->label->numstyles; its++) {
-                  if(textSymbolPtr->label->styles[its]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
+                  if(textSymbolPtr->label->styles[its]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY || 
+                     textSymbolPtr->label->styles[its]->_geomtransform.type == MS_GEOMTRANSFORM_LABELCENTER) {
                     textSymbolPtr->style_bounds[its] = msSmallMalloc(sizeof(label_bounds));
                     copyLabelBounds(textSymbolPtr->style_bounds[its], &labelpoly_bounds);
                   }
@@ -3158,7 +3297,6 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
 
               } /* else: we'll use labelpoly_bounds directly below */
             } /* next label in the group */
-
 
             if(cachePtr->status != MS_DELETE) {
               /* compute the global label bbox */
@@ -3193,6 +3331,16 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
               }
             }
 
+            /* check that mindistance is respected */
+            if (cachePtr->numtextsymbols && cachePtr->textsymbols[0]->label->mindistance > 0.0 && cachePtr->textsymbols[0]->annotext) {
+              if (msCheckLabelMinDistance(map, cachePtr) == MS_TRUE) {
+                cachePtr->status = MS_DELETE;
+                MS_DEBUG(MS_DEBUGLEVEL_DEVDEBUG, map,
+                         "Skipping labelgroup %d \"%s\" in layer \"%s\": too close to an identical label (mindistance)\n",
+                         l, cachePtr->textsymbols[0]->annotext, layerPtr->name);
+              }
+            }
+
             if(cachePtr->status == MS_OFF || cachePtr->status == MS_DELETE)
               continue; /* next labelCacheMemberObj, as we had a collision */
 
@@ -3208,7 +3356,7 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
                     if(UNLIKELY(MS_FAILURE == msDrawMarkerSymbol(map, image, &(cachePtr->point), textSymbolPtr->label->styles[i], textSymbolPtr->scalefactor))) {
                       return MS_FAILURE;
                     }
-                  } else if(textSymbolPtr->label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY && textSymbolPtr->annotext) {
+                  } else if(textSymbolPtr->annotext && textSymbolPtr->label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELPOLY) {
                     if(textSymbolPtr->style_bounds && textSymbolPtr->style_bounds[i]) {
                       if(UNLIKELY(MS_FAILURE == msDrawLabelBounds(map,image,textSymbolPtr->style_bounds[i],textSymbolPtr->label->styles[i], textSymbolPtr->scalefactor))) {
                         return MS_FAILURE;
@@ -3218,8 +3366,25 @@ int msDrawLabelCache(mapObj *map, imageObj *image)
                         return MS_FAILURE;
                       }
                     }
+		  } else if(textSymbolPtr->annotext && textSymbolPtr->label->styles[i]->_geomtransform.type == MS_GEOMTRANSFORM_LABELCENTER) {
+                    pointObj labelCenter;
+
+                    if(textSymbolPtr->style_bounds && textSymbolPtr->style_bounds[i]) {
+                      labelCenter.x = (textSymbolPtr->style_bounds[i]->bbox.maxx + textSymbolPtr->style_bounds[i]->bbox.minx)/2;
+                      labelCenter.y = (textSymbolPtr->style_bounds[i]->bbox.maxy + textSymbolPtr->style_bounds[i]->bbox.miny)/2;
+                      if(UNLIKELY(MS_FAILURE == msDrawMarkerSymbol(map,image,&labelCenter,textSymbolPtr->label->styles[i], textSymbolPtr->scalefactor))) {
+                        return MS_FAILURE;
+                      }
+                    } else {
+                      labelCenter.x = (labelpoly_bounds.bbox.maxx + labelpoly_bounds.bbox.minx)/2;
+                      labelCenter.y = (labelpoly_bounds.bbox.maxy + labelpoly_bounds.bbox.miny)/2;
+                      if(UNLIKELY(MS_FAILURE == msDrawMarkerSymbol(map,image,&labelCenter,textSymbolPtr->label->styles[i], textSymbolPtr->scalefactor))) {
+                        return MS_FAILURE;
+                      }
+                    }
+
                   } else {
-                    msSetError(MS_MISCERR,"Labels only support LABELPNT and LABELPOLY GEOMTRANSFORMS", "msDrawLabelCAche()");
+                    msSetError(MS_MISCERR,"Labels only support LABELPNT, LABELPOLY and LABELCENTER GEOMTRANSFORMS", "msDrawLabelCache()");
                     return MS_FAILURE;
                   }
                 }
