@@ -1,3 +1,27 @@
+mapserver (7.2.1-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Bump Standards-Version to 4.2.1, no changes.
+  * Drop patches applied upstream. Refresh remaining patches.
+  * Fix docs install for README rename.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Tue, 02 Oct 2018 07:11:40 +0200
+
+mapserver (7.2.0-5) unstable; urgency=medium
+
+  * Bump Standards-Version to 4.2.0, no changes.
+  * Add patch to fix FTBFS with CMake 3.12.x.
+    (closes: #906605)
+
+ -- Bas Couwenberg <sebastic@debian.org>  Sun, 19 Aug 2018 09:45:57 +0200
+
+mapserver (7.2.0-4) unstable; urgency=medium
+
+  * Drop autopkgtest to test installability.
+  * Add lintian override for testsuite-autopkgtest-missing.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Tue, 31 Jul 2018 21:45:41 +0200
+
 mapserver (7.2.0-3~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports.
